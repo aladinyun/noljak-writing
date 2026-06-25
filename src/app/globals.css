@@ -1,0 +1,44 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
+
+* { box-sizing: border-box; }
+
+body {
+  font-family: 'Pretendard', 'Apple SD Gothic Neo', sans-serif;
+  background: #f8f8f6;
+  color: #1a1a1a;
+}
+
+.chip {
+  @apply px-4 py-2 rounded-full border border-gray-200 text-gray-500 text-sm cursor-pointer transition-all select-none;
+}
+.chip:hover {
+  @apply border-gray-400 text-gray-800;
+}
+.chip.selected {
+  @apply bg-noljak-purple-light border-noljak-purple text-noljak-purple-dark font-medium;
+}
+
+.color-chip {
+  @apply w-8 h-8 rounded-full cursor-pointer border-2 border-transparent transition-all;
+}
+.color-chip.selected {
+  @apply border-noljak-purple scale-110;
+}
+
+input[type="text"],
+input[type="email"],
+input[type="password"],
+select,
+textarea {
+  @apply w-full px-3 py-2 text-sm border border-gray-200 rounded-lg bg-white text-gray-900 outline-none transition-all;
+}
+input:focus, select:focus, textarea:focus {
+  @apply border-noljak-purple ring-2 ring-noljak-purple-light;
+}
+textarea {
+  @apply resize-y min-h-[80px] leading-relaxed;
+}
