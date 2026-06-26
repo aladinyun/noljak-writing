@@ -16,7 +16,7 @@ export async function POST(req: NextRequest) {
     }
 
     const messages: Anthropic.MessageParam[] = []
-    const content: Anthropic.ContentBlockParam[] = []
+    const content: Array<Anthropic.ImageBlockParam | Anthropic.TextBlockParam> = []
 
     // 사진이 있으면 이미지 분석 먼저
     if (photos && photos.length > 0) {
