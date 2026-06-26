@@ -1,7 +1,22 @@
+export interface CareerInfo {
+  education: string
+  degree: string
+  career1: string
+  career1period: string
+  career2: string
+  career2period: string
+  award1: string
+  award2: string
+}
+
 export interface DirectorProfile {
   name: string
   major: string
+  career: CareerInfo
   personality: string[]
+  sentenceRhythm: string
+  emotionStyle: string
+  openingStyle: string
   writingStyle: string
   favWords: string[]
   likeColor: string
@@ -12,22 +27,23 @@ export interface DirectorProfile {
 
 export interface WritingConfig {
   purpose: 'blog' | 'insta' | 'intro' | 'event' | 'free'
-  length: string
-  introExtra?: string
-  eventPrompt?: string
+  blogTopic?: string
+  instaTags?: string
+  introLength?: number
   freeTopic?: string
+  freeLength?: string
+  photos?: string[]
 }
 
 export interface EventContext {
   childName: string
-  childAge: string
   childGrade: string
   startAge: string
-  openPeriod: string
   before: string
   after: string
   achievement: string
   message: string
+  photos?: string[]
 }
 
 export type Step = 0 | 1 | 2 | 3
@@ -36,23 +52,9 @@ export const PURPOSES = [
   { id: 'blog', label: '블로그', sub: '네이버, 티스토리 등 포스팅' },
   { id: 'insta', label: '인스타그램', sub: '피드 캡션 + 해시태그' },
   { id: 'intro', label: '소개글', sub: '원장 · 센터 소개' },
-  { id: 'event', label: '이벤트 참여', sub: '놀작 공모전 응모글' },
-  { id: 'free', label: '자유 작성', sub: '직접 주제 입력' },
+  { id: 'event', label: '이벤트 참여', sub: '놀작마이아트 15주년 수기 공모전' },
+  { id: 'free', label: '자유 작성', sub: '직접 주제·분량 입력' },
 ] as const
-
-export const LENGTHS = [
-  { label: '반 장', sub: '약 400자', target: 400 },
-  { label: '한 장', sub: '약 800자', target: 800 },
-  { label: '한 장 반', sub: '약 1,200자', target: 1200 },
-  { label: '두 장', sub: '약 1,600자', target: 1600 },
-  { label: '세 장 이상', sub: '2,000자+', target: 2000 },
-]
-
-export const JOBS = [
-  '유치원/어린이집 교사', '초등교사', '중고등교사', '학원 강사',
-  '디자이너', '회사원', '공무원', '간호사/의료직',
-  '주부', '예술가/작가', '자영업',
-]
 
 export const PERSONALITIES = [
   '꼼꼼하고 체계적', '따뜻하고 공감 잘함', '활발하고 에너지 넘침',
@@ -67,6 +69,10 @@ export const WRITING_STYLES = [
   '논문처럼 논리적', '수필처럼 감성적', '신문기사처럼 명료한',
   '시처럼 서정적', 'SNS처럼 친근하고 짧은',
 ]
+
+export const SENTENCE_RHYTHMS = ['짧고 강하게', '중간 호흡', '길고 흐르듯이']
+export const EMOTION_STYLES = ['직접적으로 감정 표현', '절제하고 담담하게', '유머로 풀어내기']
+export const OPENING_STYLES = ['질문으로 시작', '장면 묘사로 시작', '나의 이야기로 시작', '명언/인용으로 시작']
 
 export const COLORS = [
   { name: '노란색', hex: '#FFD600' },
@@ -88,3 +94,5 @@ export const GRADES = [
   '중학교 1학년', '중학교 2학년', '중학교 3학년',
   '고등학생', '대학생 이상',
 ]
+
+export const DEGREES = ['학사', '석사', '박사', '전문학사', '대학원 수료']
