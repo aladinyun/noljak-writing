@@ -1,90 +1,125 @@
 import type { DirectorProfile, WritingConfig, EventContext } from './types'
 
-const PURPOSE_CONTEXT: Record<string, string> = {
-  blog: '네이버 또는 티스토리 블로그 포스팅 형식으로, 독자가 끝까지 읽고 싶은 흡인력 있는 구성으로 작성. 소제목 활용 가능.',
-  insta: '인스타그램 피드 캡션으로, 감성적인 첫 문장으로 시작하고 마지막에 관련 해시태그 3~5개 포함.',
-  intro: '원장 및 센터 소개글로, 교육 철학과 놀작을 선택한 이유를 중심으로 신뢰감 있게 작성.',
-  event: '이벤트/공모전 응모글로, 진정성과 감동이 있는 수기 형식으로 작성.',
-  free: '아래 요청사항에 맞게 자유롭게 작성.',
-}
+const BLOG_GUIDELINE = `
+[블로그 작성 지침 - 반드시 준수]
+- 글자 수: 공백 제외 1600~2000자
+- 제목: 핵심 키워드를 제목 맨 앞에 넣고 25자 미만
+- 본문 구성:
+  - 핵심 키워드 5~6회 자연스럽게 반복
+  - 이론 + 실제 사례 병행
+  - 문단별로 사진 첨부 가능하도록 구성 (사진 위치를 [사진1] [사진2] 형태로 명시)
+  - 소제목 활용 권장`
 
-const LENGTH_GUIDE: Record<string, string> = {
-  '반 장': '공백 포함 약 400자',
-  '한 장': '공백 포함 약 800자',
-  '한 장 반': '공백 포함 약 1,200자',
-  '두 장': '공백 포함 약 1,600자',
-  '세 장 이상': '공백 포함 2,000자 이상',
-}
+const EVENT_PROMPT = `
+너는 15년 역사의 미술교육 브랜드 '놀작마이아트'의 교육 가치를 누구보다 깊이 이해하는 교육원 원장이자 엄마야.
+놀작의 교육철학에 공감해 창업했고, 자녀에게 꾸준히 놀작 교육을 받게 한 결과 아이의 성장을 직접 목격한 사람이야.
+
+[작성 조건]
+1. 입력된 정보를 바탕으로 아이의 성장 스토리를 중심으로 서술
+2. 원장의 전공과 성격이 글의 어조와 문체에 자연스럽게 배어나오도록
+3. 따뜻한 ~합니다체 유지
+4. 세련된 비유와 구체적 장면 묘사 포함
+5. 분량: A4 1매 (공백 포함 900자 내외)
+6. 감동적인 제목 자동 생성
+7. 결과물(수기 본문)만 출력, 설명이나 부연 없이`
 
 export function buildPrompt(
   profile: DirectorProfile,
   config: WritingConfig,
-  eventCtx?: EventContext
+  eventCtx?: EventContext,
+  photoDescriptions?: string[]
 ): string {
-  const lengthKey = Object.keys(LENGTH_GUIDE).find(k => config.length.includes(k)) || '한 장'
-  const lengthGuide = LENGTH_GUIDE[lengthKey]
-  const purposeContext = PURPOSE_CONTEXT[config.purpose] || ''
-
-  const isEventMode = config.purpose === 'event' && eventCtx
-
-  let additionalContext = ''
-  if (config.purpose === 'intro' && config.introExtra) {
-    additionalContext = `\n추가 정보: ${config.introExtra}`
-  }
-  if (config.purpose === 'free' && config.freeTopic) {
-    additionalContext = `\n요청사항: ${config.freeTopic}`
-  }
-  if (config.purpose === 'event' && config.eventPrompt) {
-    additionalContext = `\n이벤트 안내문: ${config.eventPrompt}`
-  }
+  const photoContext = photoDescriptions && photoDescriptions.length > 0
+    ? `\n[첨부 사진 분석]\n${photoDescriptions.map((d, i) => `사진${i + 1}: ${d}`).join('\n')}`
+    : ''
 
   const baseProfile = `
 [원장님 정보]
 - 이름: ${profile.name}
 - 전공: ${profile.major}
-- 성격: ${profile.personality.join(', ') || '미기재'}
-- 선호 문체: ${profile.writingStyle || '자유'}
+- 최종 학력: ${profile.career.education} ${profile.career.degree}
+- 주요 경력: ${profile.career.career1} (${profile.career.career1period})${profile.career.career2 ? `, ${profile.career.career2} (${profile.career.career2period})` : ''}
+${profile.career.award1 ? `- 수상/업적: ${profile.career.award1}${profile.career.award2 ? `, ${profile.career.award2}` : ''}` : ''}
+- 성격: ${profile.personality.join(', ')}
+- 문장 호흡: ${profile.sentenceRhythm}
+- 감정 표현: ${profile.emotionStyle}
+- 글 시작 방식: ${profile.openingStyle}
+- 선호 문체: ${profile.writingStyle}
 - 글에 녹여줄 단어: ${profile.favWords.filter(Boolean).join(', ') || '없음'}
-- 좋아하는 색상: ${profile.likeColor}${profile.likeColorReason ? ` (이유: ${profile.likeColorReason})` : ''}
-- 조심스러운 색상: ${profile.avoidColor}${profile.avoidColorReason ? ` (이유: ${profile.avoidColorReason})` : ''}`
+- 좋아하는 색상: ${profile.likeColor}${profile.likeColorReason ? ` (${profile.likeColorReason})` : ''}
+- 조심스러운 색상: ${profile.avoidColor}${profile.avoidColorReason ? ` (${profile.avoidColorReason})` : ''}`
 
-  if (isEventMode && eventCtx) {
-    return `당신은 15년 역사의 미술교육 브랜드 '놀작에듀'의 가치를 누구보다 잘 아는 교육 전문가이자, 놀작 교육을 통해 아이를 성공적으로 키워낸 어머니(놀작 원장)입니다.
-
-아래 정보를 바탕으로 놀작 15주년 기념 수기 공모전에 제출할 감동적이고 진정성 있는 수기를 작성해주세요.
-
-[작성 조건]
-1. 전공(${profile.major})과 좋아하는 색상(${profile.likeColor}${profile.likeColorReason ? ` - ${profile.likeColorReason}` : ''}), 기피하는 색상(${profile.avoidColor}${profile.avoidColorReason ? ` - ${profile.avoidColorReason}` : ''})을 아이의 성장 과정과 놀작 교육 철학에 연결한 세련된 문학적 비유로 자연스럽게 녹여낼 것
-2. 어조: 엄마이자 원장으로서의 자부심과 감동이 묻어나는 따뜻한 ~합니다체
-3. 분량: ${lengthGuide} (A4 1매)
-4. 감동적인 제목 포함
-5. 수기 본문만 출력, 설명이나 부연 없이
+  if (config.purpose === 'event' && eventCtx) {
+    return `${EVENT_PROMPT}
 ${baseProfile}
 
 [아이 성장 이야기]
-- 아이 이름: ${eventCtx.childName} / ${eventCtx.childAge} ${eventCtx.childGrade}
+- 아이 이름/학년: ${eventCtx.childName} / ${eventCtx.childGrade}
 - 놀작 시작 시기: ${eventCtx.startAge}
-- 센터 운영 기간: ${eventCtx.openPeriod}
-- 놀작 전 고민: ${eventCtx.before}
-- 놀작 후 변화: ${eventCtx.after}
-- 구체적 성과: ${eventCtx.achievement}
-- 전하고 싶은 말: ${eventCtx.message}
+- 시작 전 고민: ${eventCtx.before}
+- 수업 후 변화: ${eventCtx.after}
+- 자랑거리: ${eventCtx.achievement}
+- 놀작에 전하는 말: ${eventCtx.message}
+${photoContext}
 
 지금 바로 수기를 작성해주세요:`
   }
 
-  return `당신은 놀작에듀(15년 역사의 아동 미술교육 프랜차이즈) 원장님의 글쓰기를 돕는 전문 작가입니다.
-아래 원장님의 개인 정보와 성향을 바탕으로, 그 사람의 목소리와 개성이 자연스럽게 담긴 글을 작성해주세요.
+  if (config.purpose === 'blog') {
+    return `당신은 놀작마이아트 원장님의 개성이 담긴 블로그 글을 대신 써주는 전문 작가입니다.
+${BLOG_GUIDELINE}
 
-[작성 방향]
-- 목적: ${purposeContext}${additionalContext}
-- 분량: ${lengthGuide}
-- 인물의 배경과 성격이 글 전반에 자연스럽게 느껴질 것
-- 좋아하는 단어는 억지스럽지 않게 1~2회 자연스럽게 녹여줄 것
-- 실제 그 사람이 쓴 것처럼, 어색한 AI 문투 없이 작성
-- 필요하면 제목 포함, 불필요하면 생략
-- 결과물(글)만 출력, 설명이나 부연 절대 없이
+[글의 주제]
+${config.blogTopic}
+${photoContext}
 ${baseProfile}
+
+[작성 규칙]
+- 원장님의 문장 스타일(${profile.sentenceRhythm} / ${profile.emotionStyle} / ${profile.openingStyle})을 충실히 반영
+- 실제 그 사람이 쓴 것처럼, AI 문투 없이
+- 결과물(글)만 출력, 설명 없이
+
+블로그 글을 작성해주세요:`
+  }
+
+  if (config.purpose === 'insta') {
+    return `당신은 놀작마이아트 원장님의 인스타그램 캡션을 써주는 전문 작가입니다.
+
+[작성 조건]
+- 감성적인 첫 문장으로 시작
+- 원장님 성격과 문체 반영
+- 마지막에 해시태그: ${config.instaTags || ''}
+- 분량: 200자 내외
+${photoContext}
+${baseProfile}
+
+캡션만 출력, 설명 없이:`
+  }
+
+  if (config.purpose === 'intro') {
+    return `당신은 놀작마이아트 원장님의 소개글을 써주는 전문 작가입니다.
+
+[작성 조건]
+- 분량: ${config.introLength || 500}자 내외
+- 교육 철학과 놀작 선택 이유 중심
+- 신뢰감 있고 따뜻한 어조
+${photoContext}
+${baseProfile}
+
+소개글만 출력, 설명 없이:`
+  }
+
+  return `당신은 놀작마이아트 원장님의 글쓰기를 돕는 전문 작가입니다.
+
+[요청]
+${config.freeTopic}
+${config.freeLength ? `[분량] ${config.freeLength}` : ''}
+${photoContext}
+${baseProfile}
+
+[작성 규칙]
+- 원장님의 문장 스타일 충실히 반영
+- 결과물만 출력, 설명 없이
 
 글을 작성해주세요:`
 }

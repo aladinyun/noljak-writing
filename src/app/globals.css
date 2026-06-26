@@ -4,41 +4,84 @@
 
 @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
 
+:root {
+  --noljak-gold: #F5A623;
+  --noljak-orange: #E8820C;
+  --noljak-cream: #FFF8EE;
+  --noljak-cream-dark: #FFF0D6;
+  --noljak-brown: #7A4F1E;
+}
+
 * { box-sizing: border-box; }
 
 body {
   font-family: 'Pretendard', 'Apple SD Gothic Neo', sans-serif;
-  background: #f8f8f6;
-  color: #1a1a1a;
+  background: #FFF8EE;
+  color: #2D1A00;
 }
 
 .chip {
-  @apply px-4 py-2 rounded-full border border-gray-200 text-gray-500 text-sm cursor-pointer transition-all select-none;
+  @apply px-3 py-1.5 rounded-full border text-sm cursor-pointer transition-all select-none;
+  border-color: #E5C98A;
+  color: #7A4F1E;
+  background: #FFFBF3;
 }
 .chip:hover {
-  @apply border-gray-400 text-gray-800;
+  border-color: #F5A623;
+  color: #E8820C;
 }
 .chip.selected {
-  @apply bg-noljak-purple-light border-noljak-purple text-noljak-purple-dark font-medium;
+  background: #F5A623;
+  border-color: #E8820C;
+  color: #fff;
+  font-weight: 500;
 }
 
 .color-chip {
   @apply w-8 h-8 rounded-full cursor-pointer border-2 border-transparent transition-all;
 }
 .color-chip.selected {
-  @apply border-noljak-purple scale-110;
+  border-color: #E8820C;
+  transform: scale(1.15);
 }
 
 input[type="text"],
 input[type="email"],
 input[type="password"],
+input[type="number"],
 select,
 textarea {
-  @apply w-full px-3 py-2 text-sm border border-gray-200 rounded-lg bg-white text-gray-900 outline-none transition-all;
+  @apply w-full px-3 py-2 text-sm border rounded-lg bg-white text-gray-900 outline-none transition-all;
+  border-color: #E5C98A;
 }
 input:focus, select:focus, textarea:focus {
-  @apply border-noljak-purple ring-2 ring-noljak-purple-light;
+  border-color: #F5A623;
+  box-shadow: 0 0 0 3px rgba(245,166,35,0.15);
 }
 textarea {
-  @apply resize-y min-h-[80px] leading-relaxed;
+  @apply resize-y min-h-[72px] leading-relaxed;
+}
+
+.btn-primary {
+  @apply w-full py-3 text-white text-sm font-medium rounded-xl transition-all;
+  background: #E8820C;
+}
+.btn-primary:hover { background: #CF710A; }
+
+.btn-secondary {
+  @apply px-4 py-2 text-sm font-medium rounded-lg border transition-all;
+  border-color: #E5C98A;
+  color: #7A4F1E;
+  background: white;
+}
+.btn-secondary:hover { background: #FFF0D6; }
+
+.section-divider {
+  @apply border-t my-5;
+  border-color: #F0D9A8;
+}
+
+.section-label {
+  @apply text-xs font-semibold uppercase tracking-wider mb-3;
+  color: #B07D3A;
 }
