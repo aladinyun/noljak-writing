@@ -80,26 +80,9 @@ export default function Home() {
           )}
           {step === 2 && (
             <StepWriting
-              config={config}
-              eventCtx={eventCtx}
-              onChangeConfig={setConfig}
-              onChangeEvent={setEventCtx}
-              onBack={() => setStep(1)}
-              onGenerate={async () => {
-                setStep(3)
-                setResult({ text: '', charCount: 0 })
-                try {
-                  const res = await fetch('/api/write', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ profile, config, eventCtx: config.purpose === 'event' ? eventCtx : undefined }),
-                  })
-                  const data = await res.json()
-                  setResult({ text: data.text || '', charCount: data.charCount || 0 })
-                } catch {
-                  setResult({ text: '오류가 발생했습니다. 다시 시도해주세요.', charCount: 0 })
-                }
-              }}
+              config={config} eventCtx={eventCtx} photos={photos}
+              onChangeConfig={setConfig} onChangeEvent={setEventCtx} onChangePhotos={setPhotos}
+              onBack={() => setStep(1)} onGenerate={generate}
             />
           )}
           {step === 3 && (
