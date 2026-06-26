@@ -1,5 +1,6 @@
 'use client'
 
+import { useEffect } from 'react'
 import type { DirectorProfile } from '@/lib/types'
 import { PERSONALITIES, WRITING_STYLES, COLORS, DEGREES, SENTENCE_RHYTHMS, EMOTION_STYLES, OPENING_STYLES } from '@/lib/types'
 
@@ -9,10 +10,28 @@ interface Props {
   onNext: () => void
 }
 
+const STORAGE_KEY = 'noljak_director_profile'
+
 export default function StepProfile({ profile, onChange, onNext }: Props) {
   const set = (key: keyof DirectorProfile, val: unknown) => onChange({ ...profile, [key]: val })
   const setCareer = (key: keyof typeof profile.career, val: string) =>
     onChange({ ...profile, career: { ...profile.career, [key]: val } })
+
+  // 로컬스토리지에서 불러오기
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY)
+      if (saved) onChange(JSON.parse(saved))
+    } catch {}
+  }, [])
+
+  // 저장
+  const saveProfile = () => {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(profile))
+      alert('기본 정보가 저장되었습니다. 다음 접속 시 자동으로 불러옵니다.')
+    } catch {}
+  }
 
   const togglePersonality = (v: string) => {
     const cur = profile.personality
@@ -71,7 +90,7 @@ export default function StepProfile({ profile, onChange, onNext }: Props) {
       <div className="grid grid-cols-2 gap-3 mb-3">
         <div>
           <label className="block text-sm mb-1.5" style={{ color: '#7A4F1E' }}>최종 학력</label>
-          <input value={profile.career.education} onChange={e => setCareer('education', e.target.value)} placeholder="예: 홍익대학교" />
+          <input value={profile.career.education} onChange={e => setCareer('education', e.target.value)} placeholder="예: 놀작대학교" />
         </div>
         <div>
           <label className="block text-sm mb-1.5" style={{ color: '#7A4F1E' }}>학위</label>
@@ -85,23 +104,53 @@ export default function StepProfile({ profile, onChange, onNext }: Props) {
         <label className="block text-sm mb-1.5" style={{ color: '#7A4F1E' }}>주요 경력 1 <span className="text-red-400">*</span></label>
         <div className="grid grid-cols-2 gap-2">
           <input value={profile.career.career1} onChange={e => setCareer('career1', e.target.value)} placeholder="예: 그래픽 디자이너" />
-          <input value={profile.career.career1period} onChange={e => setCareer('career1period', e.target.value)} placeholder="예: 2010~2018" />
+          <div className="flex items-center gap-1">
+            <input
+              type="number" min={1} max={50}
+              value={profile.career.career1period}
+              onChange={e => setCareer('career1period', e.target.value)}
+              placeholder="예: 5"
+              className="w-20"
+            />
+            <span className="text-sm whitespace-nowrap" style={{ color: '#7A4F1E' }}>년</span>
+          </div>
         </div>
       </div>
       <div className="mb-3">
         <label className="block text-sm mb-1.5" style={{ color: '#7A4F1E' }}>주요 경력 2 <span className="text-xs" style={{ color: '#B07D3A' }}>(선택)</span></label>
         <div className="grid grid-cols-2 gap-2">
           <input value={profile.career.career2} onChange={e => setCareer('career2', e.target.value)} placeholder="예: 미술학원 강사" />
-          <input value={profile.career.career2period} onChange={e => setCareer('career2period', e.target.value)} placeholder="예: 2018~2020" />
+          <div className="flex items-center gap-1">
+            <input
+              type="number" min={1} max={50}
+              value={profile.career.career2}
+              onChange={e => setCareer('career2period', e.target.value)}
+              placeholder="예: 3"
+              className="w-20"
+            />
+            <span className="text-sm whitespace-nowrap" style={{ color: '#7A4F1E' }}>년</span>
+          </div>
         </div>
       </div>
       <div className="mb-3">
-        <label className="block text-sm mb-1.5" style={{ color: '#7A4F1E' }}>수상 및 업적 <span className="text-xs" style={{ color: '#B07D3A' }}>(선택, 최대 2개)</span></label>
-        <div className="space-y-2">
-          <input value={profile.career.award1} onChange={e => setCareer('award1', e.target.value)} placeholder="예: 2023 놀작 우수원장상" />
-          <input value={profile.career.award2} onChange={e => setCareer('award2', e.target.value)} placeholder="예: 지역 교육청 표창" />
-        </div>
+        <label className="block text-sm mb-1.5" style={{ color: '#7A4F1E' }}>
+          수상 및 업적 <span className="text-xs" style={{ color: '#B07D3A' }}>(선택 · 여러 개는 쉼표로 구분)</span>
+        </label>
+        <input
+          value={profile.career.award1}
+          onChange={e => setCareer('award1', e.target.value)}
+          placeholder="예: 2023 놀작 우수원장상, 지역 교육청 표창, OO대회 입상"
+        />
       </div>
+
+      {/* 저장 버튼 */}
+      <button
+        onClick={saveProfile}
+        className="w-full py-2 text-sm font-medium rounded-lg border mb-5 transition-all"
+        style={{ borderColor: '#E5C98A', color: '#E8820C', background: '#FFFBF3' }}
+      >
+        💾 기본 정보 저장하기 (다음 접속 시 자동 불러오기)
+      </button>
 
       <div className="section-divider" />
 
