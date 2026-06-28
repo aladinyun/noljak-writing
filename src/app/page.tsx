@@ -32,7 +32,7 @@ export default function Home() {
   const [profile, setProfile] = useState<DirectorProfile>(defaultProfile)
   const [config, setConfig] = useState<WritingConfig>(defaultConfig)
   const [eventCtx, setEventCtx] = useState<EventContext>(defaultEvent)
-  const [photos, setPhotos] = useState<Array<{ base64: string; mediaType: string }>>([])
+  const [photos, setPhotos] = useState<Array<{ base64: string; mediaType: string; name: string }>>([])
   const [result, setResult] = useState({ text: '', charCount: 0 })
   const [hasSavedProfile, setHasSavedProfile] = useState(false)
   const [savedName, setSavedName] = useState('')
