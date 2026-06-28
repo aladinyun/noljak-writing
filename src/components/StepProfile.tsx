@@ -71,7 +71,7 @@ export default function StepProfile({ profile, onChange, onNext }: Props) {
       <div className="grid grid-cols-2 gap-3 mb-3">
         <div>
           <label className="block text-sm mb-1.5" style={{ color: '#7A4F1E' }}>이름</label>
-          <input value={profile.name} onChange={e => set('name', e.target.value)} placeholder="김놀작" />
+          <input value={profile.name} onChange={e => set('name', e.target.value)} placeholder="김놀작" maxLength={10}/>
         </div>
         <div>
           <label className="block text-sm mb-1.5" style={{ color: '#7A4F1E' }}>전공</label>
@@ -89,7 +89,7 @@ export default function StepProfile({ profile, onChange, onNext }: Props) {
       <div className="grid grid-cols-2 gap-3 mb-3">
         <div>
           <label className="block text-sm mb-1.5" style={{ color: '#7A4F1E' }}>최종 학교</label>
-          <input value={profile.career.education} onChange={e => setCareer('education', e.target.value)} placeholder="예: 놀작대학교" />
+          <input value={profile.career.education} onChange={e => setCareer('education', e.target.value)} placeholder="예: 놀작대학교" maxLength={10} />
         </div>
         <div>
           <label className="block text-sm mb-1.5" style={{ color: '#7A4F1E' }}>학위</label>
@@ -106,7 +106,7 @@ export default function StepProfile({ profile, onChange, onNext }: Props) {
           <input
             value={profile.career.career1}
             onChange={e => setCareer('career1', e.target.value)}
-            placeholder="예: 놀작에듀 디자인 팀장"
+            placeholder="예: 놀작에듀 디자인 팀장" maxLength={15}
             className="flex-1"
           />
           <input
@@ -126,7 +126,7 @@ export default function StepProfile({ profile, onChange, onNext }: Props) {
           <input
             value={profile.career.career2}
             onChange={e => setCareer('career2', e.target.value)}
-            placeholder="예: 미술학원 강사"
+            placeholder="예: 미술학원 강사" maxLength={15}
             className="flex-1"
           />
           <input
@@ -159,7 +159,8 @@ export default function StepProfile({ profile, onChange, onNext }: Props) {
         <input
           value={profile.career.centerKeyword}
           onChange={e => setCareer('centerKeyword', e.target.value)}
-          placeholder="예: 따뜻한 / 창의적인 / 전문적인 / 즐거운"
+          placeholder="예: 따뜻한, 창의적인, 전문적인, 즐거운, 안전한"
+          maxLength={20}
         />
       </div>
 
