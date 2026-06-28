@@ -67,76 +67,56 @@ export default function StepProfile({ profile, onChange, onNext }: Props) {
       <p className="text-sm mb-5" style={{ color: '#7A4F1E' }}>원장님 정보를 알려주시면 더 잘 맞는 글을 써드려요</p>
 
       {/* 기본 정보 */}
-      <p className="section-label">기본 정보</p>
-      <div className="grid grid-cols-2 gap-3 mb-3">
-        <div>
-          <label className="block text-sm mb-1.5" style={{ color: '#7A4F1E' }}>이름</label>
-          <input value={profile.name} onChange={e => set('name', e.target.value)} placeholder="김놀작" maxLength={6}/>
-        </div>
-        <div>
-          <label className="block text-sm mb-1.5" style={{ color: '#7A4F1E' }}>전공</label>
-          <input
-            value={profile.major}
-            onChange={e => set('major', e.target.value)}
-            placeholder="예: 시각디자인"
-            maxLength={10}
-          />
-        </div>
+    <p className="section-label">기본 정보</p>
+      <div className="mb-3">
+        <label className="block text-sm mb-1.5" style={{ color: '#7A4F1E' }}>이름</label>
+        <input value={profile.name} onChange={e => set('name', e.target.value)} placeholder="김놀작" maxLength={10} />
+      </div>
+      <div className="mb-3">
+        <label className="block text-sm mb-1.5" style={{ color: '#7A4F1E' }}>전공</label>
+        <input value={profile.major} onChange={e => set('major', e.target.value)} placeholder="예: 시각디자인" maxLength={10} />
       </div>
 
-      {/* 경력 */}
       <p className="section-label mt-4">나의 경력</p>
-      <div className="grid grid-cols-2 gap-3 mb-3">
-        <div>
-          <label className="block text-sm mb-1.5" style={{ color: '#7A4F1E' }}>최종 학교</label>
-          <input value={profile.career.education} onChange={e => setCareer('education', e.target.value)} placeholder="예: 놀작대학교" maxLength={8} />
-        </div>
-        <div>
-          <label className="block text-sm mb-1.5" style={{ color: '#7A4F1E' }}>학위</label>
-          <select value={profile.career.degree} onChange={e => setCareer('degree', e.target.value)}>
-            <option value="">선택</option>
-            {DEGREES.map(d => <option key={d}>{d}</option>)}
-          </select>
-        </div>
+      <div className="mb-3">
+        <label className="block text-sm mb-1.5" style={{ color: '#7A4F1E' }}>최종 학교</label>
+        <input value={profile.career.education} onChange={e => setCareer('education', e.target.value)} placeholder="예: 놀작대학교" maxLength={10} />
+      </div>
+      <div className="mb-3">
+        <label className="block text-sm mb-1.5" style={{ color: '#7A4F1E' }}>학위</label>
+        <select value={profile.career.degree} onChange={e => setCareer('degree', e.target.value)}>
+          <option value="">선택</option>
+          {DEGREES.map(d => <option key={d}>{d}</option>)}
+        </select>
       </div>
 
       <div className="mb-3">
         <label className="block text-sm mb-1.5" style={{ color: '#7A4F1E' }}>주요 경력 1 <span className="text-red-400">*</span></label>
-        <div className="flex gap-2 items-center">
-          <input
-            value={profile.career.career1}
-            onChange={e => setCareer('career1', e.target.value)}
-            placeholder="예: 놀작에듀 디자인 팀장" maxLength={12}
-            className="flex-1"
-          />
-          <input
-            type="number" min={1} max={99}
+        <input value={profile.career.career1} onChange={e => setCareer('career1', e.target.value)}
+          placeholder="예: 놀작에듀 디자인 팀장" maxLength={15} className="mb-2" />
+        <div className="flex items-center gap-2">
+          <input type="number" min={1} max={99}
             value={profile.career.career1period}
             onChange={e => setCareer('career1period', e.target.value)}
-            placeholder="년수"
-            style={{ width: '56px' }}
+            placeholder="경력 연수"
+            style={{ width: '100px' }}
           />
-          <span className="text-sm whitespace-nowrap" style={{ color: '#7A4F1E' }}>년</span>
+          <span className="text-sm" style={{ color: '#7A4F1E' }}>년</span>
         </div>
       </div>
 
       <div className="mb-3">
         <label className="block text-sm mb-1.5" style={{ color: '#7A4F1E' }}>주요 경력 2 <span className="text-xs" style={{ color: '#B07D3A' }}>(선택)</span></label>
-        <div className="flex gap-2 items-center">
-          <input
-            value={profile.career.career2}
-            onChange={e => setCareer('career2', e.target.value)}
-            placeholder="예: 미술학원 강사" maxLength={12}
-            className="flex-1"
-          />
-          <input
-            type="number" min={1} max={99}
+        <input value={profile.career.career2} onChange={e => setCareer('career2', e.target.value)}
+          placeholder="예: 미술학원 강사" maxLength={15} className="mb-2" />
+        <div className="flex items-center gap-2">
+          <input type="number" min={1} max={99}
             value={profile.career.career2period}
             onChange={e => setCareer('career2period', e.target.value)}
-            placeholder="년수"
-            style={{ width: '56px' }}
+            placeholder="경력 연수"
+            style={{ width: '100px' }}
           />
-          <span className="text-sm whitespace-nowrap" style={{ color: '#7A4F1E' }}>년</span>
+          <span className="text-sm" style={{ color: '#7A4F1E' }}>년</span>
         </div>
       </div>
 
