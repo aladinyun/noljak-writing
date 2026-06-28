@@ -53,7 +53,7 @@ export interface EventContext {
   message: string
 }
 
-export type Step = 0 | 1 | 2 | 3
+export type Step = -1 | 0 | 1 | 2 | 3
 
 export const PURPOSES = [
   { id: 'blog', label: '블로그', sub: '네이버, 티스토리 등 포스팅' },
