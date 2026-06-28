@@ -28,26 +28,44 @@ export default function StepWriting({ config, eventCtx, photos, onChangeConfig, 
   const setC = (key: keyof WritingConfig, val: unknown) => onChangeConfig({ ...config, [key]: val })
   const setE = (key: keyof EventContext, val: string) => onChangeEvent({ ...eventCtx, [key]: val })
 
-  const maxPhotos = config.purpose === 'event' ? 3 : 5
+ const maxPhotos = 3
 
-  const handlePhotos = (files: FileList | null) => {
-    if (!files) return
-    const remaining = maxPhotos - photos.length
-    if (remaining <= 0) {
-      alert(`사진은 최대 ${maxPhotos}장까지 첨부할 수 있습니다.`)
-      return
-    }
-    const arr = Array.from(files).slice(0, remaining)
-    Promise.all(arr.map(f => new Promise<{ base64: string; mediaType: string; name: string }>((res) => {
-      const reader = new FileReader()
-      reader.onload = () => {
-        const result = reader.result as string
-        res({ base64: result.split(',')[1], mediaType: f.type, name: f.name })
+const compressImage = (file: File): Promise<{ base64: string; mediaType: string; name: string }> => {
+  return new Promise((resolve) => {
+    const canvas = document.createElement('canvas')
+    const ctx = canvas.getContext('2d')!
+    const img = new window.Image()
+    const url = URL.createObjectURL(file)
+    img.onload = () => {
+      const MAX = 800
+      let { width, height } = img
+      if (width > MAX || height > MAX) {
+        if (width > height) { height = Math.round(height * MAX / width); width = MAX }
+        else { width = Math.round(width * MAX / height); height = MAX }
       }
-      reader.readAsDataURL(f)
-    }))).then(newPhotos => onChangePhotos([...photos, ...newPhotos]))
-  }
+      canvas.width = width
+      canvas.height = height
+      ctx.drawImage(img, 0, 0, width, height)
+      const base64 = canvas.toDataURL('image/jpeg', 0.75).split(',')[1]
+      URL.revokeObjectURL(url)
+      resolve({ base64, mediaType: 'image/jpeg', name: file.name })
+    }
+    img.src = url
+  })
+}
 
+const handlePhotos = async (files: FileList | null) => {
+  if (!files) return
+  const remaining = maxPhotos - photos.length
+  if (remaining <= 0) {
+    alert(`사진은 최대 ${maxPhotos}장까지 첨부할 수 있습니다.`)
+    return
+  }
+  const arr = Array.from(files).slice(0, remaining)
+  const compressed = await Promise.all(arr.map(f => compressImage(f)))
+  onChangePhotos([...photos, ...compressed])
+} 
+ 
   const removePhoto = (index: number) => {
     onChangePhotos(photos.filter((_, i) => i !== index))
   }
