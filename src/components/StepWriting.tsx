@@ -7,10 +7,10 @@ import { PURPOSES, WRITING_GOALS, TARGET_AUDIENCES, SENTENCE_RHYTHMS, EMOTION_ST
 interface Props {
   config: WritingConfig
   eventCtx: EventContext
-  photos: Array<{ base64: string; mediaType: string }>
+  photos: Array<{ base64: string; mediaType: string; name: string }>
   onChangeConfig: (c: WritingConfig) => void
   onChangeEvent: (e: EventContext) => void
-  onChangePhotos: (p: Array<{ base64: string; mediaType: string }>) => void
+  onChangePhotos: (p: Array<{ base64: string; mediaType: string; name: string }>) => void
   onBack: () => void
   onGenerate: () => void
 }
@@ -28,18 +28,28 @@ export default function StepWriting({ config, eventCtx, photos, onChangeConfig, 
   const setC = (key: keyof WritingConfig, val: unknown) => onChangeConfig({ ...config, [key]: val })
   const setE = (key: keyof EventContext, val: string) => onChangeEvent({ ...eventCtx, [key]: val })
 
+  const maxPhotos = config.purpose === 'event' ? 3 : 5
+
   const handlePhotos = (files: FileList | null) => {
     if (!files) return
-    const maxPhotos = config.purpose === 'event' ? 3 : 5
-    const arr = Array.from(files).slice(0, maxPhotos)
-    Promise.all(arr.map(f => new Promise<{ base64: string; mediaType: string }>((res) => {
+    const remaining = maxPhotos - photos.length
+    if (remaining <= 0) {
+      alert(`사진은 최대 ${maxPhotos}장까지 첨부할 수 있습니다.`)
+      return
+    }
+    const arr = Array.from(files).slice(0, remaining)
+    Promise.all(arr.map(f => new Promise<{ base64: string; mediaType: string; name: string }>((res) => {
       const reader = new FileReader()
       reader.onload = () => {
         const result = reader.result as string
-        res({ base64: result.split(',')[1], mediaType: f.type })
+        res({ base64: result.split(',')[1], mediaType: f.type, name: f.name })
       }
       reader.readAsDataURL(f)
-    }))).then(onChangePhotos)
+    }))).then(newPhotos => onChangePhotos([...photos, ...newPhotos]))
+  }
+
+  const removePhoto = (index: number) => {
+    onChangePhotos(photos.filter((_, i) => i !== index))
   }
 
   const validate = () => {
@@ -65,8 +75,8 @@ export default function StepWriting({ config, eventCtx, photos, onChangeConfig, 
     return true
   }
 
-  const ChipGroup = ({ label, options, value, onChange, single = true }: {
-    label: string; options: string[]; value: string; onChange: (v: string) => void; single?: boolean
+  const ChipGroup = ({ label, options, value, onChange }: {
+    label: string; options: string[]; value: string; onChange: (v: string) => void
   }) => (
     <div className="mb-4">
       <p className="text-sm font-medium mb-2" style={{ color: '#7A4F1E' }}>
@@ -85,25 +95,11 @@ export default function StepWriting({ config, eventCtx, photos, onChangeConfig, 
       <h2 className="text-lg font-bold mb-1" style={{ color: '#2D1A00' }}>글쓰기 설정</h2>
       <p className="text-sm mb-5" style={{ color: '#7A4F1E' }}>이 글을 어떻게 작성하길 바라나요?</p>
 
-      {/* 글쓰기 목표 */}
-      <ChipGroup
-        label="글쓰기 목표"
-        options={WRITING_GOALS}
-        value={config.writingGoal}
-        onChange={v => setC('writingGoal', v)}
-      />
-
-      {/* 독자 대상 */}
-      <ChipGroup
-        label="독자 대상"
-        options={TARGET_AUDIENCES}
-        value={config.targetAudience}
-        onChange={v => setC('targetAudience', v)}
-      />
+      <ChipGroup label="글쓰기 목표" options={WRITING_GOALS} value={config.writingGoal} onChange={v => setC('writingGoal', v)} />
+      <ChipGroup label="독자 대상" options={TARGET_AUDIENCES} value={config.targetAudience} onChange={v => setC('targetAudience', v)} />
 
       <div className="section-divider" />
 
-      {/* 글쓰기 목적 */}
       <p className="section-label">글쓰기 목적</p>
       <div className="grid grid-cols-2 gap-2 mb-4">
         {PURPOSES.map(p => (
@@ -118,26 +114,19 @@ export default function StepWriting({ config, eventCtx, photos, onChangeConfig, 
         ))}
       </div>
 
-      {/* 목적별 추가 입력 */}
       {config.purpose === 'blog' && (
         <div className="mb-4">
           <label className="block text-sm mb-1.5" style={{ color: '#7A4F1E' }}>블로그 글의 주제 <span className="text-red-400">*</span></label>
-          <textarea
-            value={config.blogTopic || ''}
-            onChange={e => setC('blogTopic', e.target.value)}
-            placeholder="예: 놀작 미술교육이 아이의 관찰력을 키우는 방법"
-          />
+          <textarea value={config.blogTopic || ''} onChange={e => setC('blogTopic', e.target.value)}
+            placeholder="예: 놀작 미술교육이 아이의 관찰력을 키우는 방법" />
         </div>
       )}
 
       {config.purpose === 'insta' && (
         <div className="mb-4">
           <label className="block text-sm mb-1.5" style={{ color: '#7A4F1E' }}>해시태그 3개 <span className="text-red-400">*</span></label>
-          <input
-            value={config.instaTags || ''}
-            onChange={e => setC('instaTags', e.target.value)}
-            placeholder="예: #놀작마이아트 #아동미술 #창의교육"
-          />
+          <input value={config.instaTags || ''} onChange={e => setC('instaTags', e.target.value)}
+            placeholder="예: #놀작마이아트 #아동미술 #창의교육" />
         </div>
       )}
 
@@ -145,12 +134,8 @@ export default function StepWriting({ config, eventCtx, photos, onChangeConfig, 
         <div className="mb-4">
           <label className="block text-sm mb-1.5" style={{ color: '#7A4F1E' }}>원하는 글자 수</label>
           <div className="flex items-center gap-3">
-            <input
-              type="number" min={100} max={2000}
-              value={config.introLength || 500}
-              onChange={e => setC('introLength', Number(e.target.value))}
-              style={{ width: '80px' }}
-            />
+            <input type="number" min={100} max={2000} value={config.introLength || 500}
+              onChange={e => setC('introLength', Number(e.target.value))} style={{ width: '80px' }} />
             <span className="text-sm" style={{ color: '#B07D3A' }}>자 (100~2,000자)</span>
           </div>
         </div>
@@ -216,60 +201,66 @@ export default function StepWriting({ config, eventCtx, photos, onChangeConfig, 
 
       <div className="section-divider" />
 
-      {/* 문장 스타일 */}
       <p className="section-label">나만의 문장 스타일</p>
-
-      <ChipGroup
-        label="문장 호흡"
-        options={SENTENCE_RHYTHMS}
-        value={config.sentenceRhythm}
-        onChange={v => setC('sentenceRhythm', v)}
-      />
-      <ChipGroup
-        label="감정 표현 방식"
-        options={EMOTION_STYLES}
-        value={config.emotionStyle}
-        onChange={v => setC('emotionStyle', v)}
-      />
+      <ChipGroup label="문장 호흡" options={SENTENCE_RHYTHMS} value={config.sentenceRhythm} onChange={v => setC('sentenceRhythm', v)} />
+      <ChipGroup label="감정 표현 방식" options={EMOTION_STYLES} value={config.emotionStyle} onChange={v => setC('emotionStyle', v)} />
       {config.purpose !== 'insta' && (
-        <ChipGroup
-          label="글 시작 방식"
-          options={OPENING_STYLES}
-          value={config.openingStyle}
-          onChange={v => setC('openingStyle', v)}
-        />
+        <ChipGroup label="글 시작 방식" options={OPENING_STYLES} value={config.openingStyle} onChange={v => setC('openingStyle', v)} />
       )}
-      <ChipGroup
-        label="선호하는 글 스타일"
-        options={WRITING_STYLES}
-        value={config.writingStyle}
-        onChange={v => setC('writingStyle', v)}
-      />
+      <ChipGroup label="선호하는 글 스타일" options={WRITING_STYLES} value={config.writingStyle} onChange={v => setC('writingStyle', v)} />
 
       <div className="section-divider" />
 
       {/* 사진 첨부 */}
-      <p className="section-label">사진 첨부 <span className="font-normal normal-case text-xs" style={{ color: '#B07D3A' }}>(선택)</span></p>
+      <p className="section-label">
+        사진 첨부 <span className="font-normal normal-case text-xs" style={{ color: '#B07D3A' }}>(선택 · 최대 {maxPhotos}장)</span>
+      </p>
       <p className="text-xs mb-3" style={{ color: '#B07D3A' }}>{PHOTO_HINTS[config.purpose]}</p>
-      <input ref={fileRef} type="file" accept="image/*" multiple className="hidden"
-        onChange={e => handlePhotos(e.target.files)} />
-      <button onClick={() => fileRef.current?.click()}
-        className="w-full py-3 rounded-xl border-2 border-dashed text-sm transition-all mb-2"
-        style={{ borderColor: '#E5C98A', color: '#B07D3A' }}>
-        📷 사진 선택하기
-      </button>
-      {photos.length > 0 && (
-        <div className="flex gap-2 flex-wrap mb-2">
-          {photos.map((_, i) => (
-            <div key={i} className="text-xs px-2 py-1 rounded-full" style={{ background: '#FFF0D6', color: '#E8820C' }}>
-              사진{i + 1} ✓
+
+      {/* 사진 목록 */}
+      <div className="space-y-2 mb-3">
+        {Array.from({ length: maxPhotos }).map((_, i) => {
+          const photo = photos[i]
+          return (
+            <div key={i} className="flex items-center gap-2 p-2.5 rounded-lg border"
+              style={{ borderColor: photo ? '#F5A623' : '#E5C98A', background: photo ? '#FFFBF3' : '#FAFAFA' }}>
+              <div className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium flex-none"
+                style={{ background: photo ? '#F5A623' : '#E5E7EB', color: photo ? 'white' : '#9CA3AF' }}>
+                {i + 1}
+              </div>
+              {photo ? (
+                <>
+                  <span className="text-sm flex-1 truncate" style={{ color: '#7A4F1E' }}>{photo.name}</span>
+                  <button onClick={() => removePhoto(i)}
+                    className="text-xs px-2 py-1 rounded-md flex-none"
+                    style={{ background: '#FEE2E2', color: '#DC2626' }}>
+                    삭제
+                  </button>
+                </>
+              ) : (
+                <span className="text-sm flex-1" style={{ color: '#9CA3AF' }}>사진 {i + 1} — 비어있음</span>
+              )}
             </div>
-          ))}
-          <button onClick={() => onChangePhotos([])} className="text-xs px-2 py-1 rounded-full"
-            style={{ background: '#FEE2E2', color: '#DC2626' }}>
-            전체 삭제
+          )
+        })}
+      </div>
+
+      {/* 사진 추가 버튼 */}
+      {photos.length < maxPhotos && (
+        <>
+          <input ref={fileRef} type="file" accept="image/*" multiple className="hidden"
+            onChange={e => handlePhotos(e.target.files)} />
+          <button onClick={() => fileRef.current?.click()}
+            className="w-full py-3 rounded-xl border-2 border-dashed text-sm transition-all mb-2"
+            style={{ borderColor: '#E5C98A', color: '#B07D3A' }}>
+            📷 사진 추가하기 ({photos.length}/{maxPhotos})
           </button>
-        </div>
+        </>
+      )}
+      {photos.length >= maxPhotos && (
+        <p className="text-xs text-center mb-2" style={{ color: '#E8820C' }}>
+          ✓ 최대 {maxPhotos}장 첨부 완료 — 삭제 후 다시 추가 가능합니다
+        </p>
       )}
 
       <div className="flex gap-3 mt-6">
