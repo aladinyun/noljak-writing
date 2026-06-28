@@ -2,7 +2,7 @@
 
 import { useRef } from 'react'
 import type { WritingConfig, EventContext } from '@/lib/types'
-import { PURPOSES, GRADES } from '@/lib/types'
+import { PURPOSES, WRITING_GOALS, TARGET_AUDIENCES, SENTENCE_RHYTHMS, EMOTION_STYLES, OPENING_STYLES, WRITING_STYLES, GRADES } from '@/lib/types'
 
 interface Props {
   config: WritingConfig
@@ -16,11 +16,11 @@ interface Props {
 }
 
 const PHOTO_HINTS: Record<string, string> = {
-  blog: '수업 현장, 아이 작품, 센터 모습 사진을 올려주세요 (3~5장)',
-  insta: '피드에 올릴 사진을 업로드해주세요 (1~5장)',
-  intro: '원장님 사진 또는 센터 사진을 올려주세요 (1~5장)',
-  event: '아이의 작품이나 성장 과정 사진을 올려주세요 (1~3장)',
-  free: '글과 관련된 사진을 올려주세요 (1~5장)',
+  blog: '수업 현장, 아이 작품, 센터 모습 사진을 올려주세요 (최대 5장)',
+  insta: '피드에 올릴 사진을 업로드해주세요 (최대 5장)',
+  intro: '원장님 사진 또는 센터 사진을 올려주세요 (최대 5장)',
+  event: '아이의 작품이나 성장 과정 사진을 올려주세요 (최대 3장)',
+  free: '글과 관련된 사진을 올려주세요 (최대 5장)',
 }
 
 export default function StepWriting({ config, eventCtx, photos, onChangeConfig, onChangeEvent, onChangePhotos, onBack, onGenerate }: Props) {
@@ -44,6 +44,12 @@ export default function StepWriting({ config, eventCtx, photos, onChangeConfig, 
 
   const validate = () => {
     const missing: string[] = []
+    if (!config.writingGoal) missing.push('글쓰기 목표')
+    if (!config.targetAudience) missing.push('독자 대상')
+    if (!config.sentenceRhythm) missing.push('문장 호흡')
+    if (!config.emotionStyle) missing.push('감정 표현 방식')
+    if (!config.openingStyle) missing.push('글 시작 방식')
+    if (!config.writingStyle) missing.push('선호하는 글 스타일')
     if (config.purpose === 'blog' && !config.blogTopic) missing.push('블로그 글의 주제')
     if (config.purpose === 'insta' && !config.instaTags) missing.push('인스타그램 해시태그')
     if (config.purpose === 'event') {
@@ -59,12 +65,45 @@ export default function StepWriting({ config, eventCtx, photos, onChangeConfig, 
     return true
   }
 
+  const ChipGroup = ({ label, options, value, onChange, single = true }: {
+    label: string; options: string[]; value: string; onChange: (v: string) => void; single?: boolean
+  }) => (
+    <div className="mb-4">
+      <p className="text-sm font-medium mb-2" style={{ color: '#7A4F1E' }}>
+        {label} <span className="text-xs font-normal" style={{ color: '#B07D3A' }}>(1개 선택)</span>
+      </p>
+      <div className="flex flex-wrap gap-2">
+        {options.map(o => (
+          <button key={o} onClick={() => onChange(o)} className={`chip ${value === o ? 'selected' : ''}`}>{o}</button>
+        ))}
+      </div>
+    </div>
+  )
+
   return (
     <div>
       <h2 className="text-lg font-bold mb-1" style={{ color: '#2D1A00' }}>글쓰기 설정</h2>
-      <p className="text-sm mb-5" style={{ color: '#7A4F1E' }}>어떤 글을 써드릴까요?</p>
+      <p className="text-sm mb-5" style={{ color: '#7A4F1E' }}>이 글을 어떻게 작성하길 바라나요?</p>
 
-      {/* 목적 */}
+      {/* 글쓰기 목표 */}
+      <ChipGroup
+        label="글쓰기 목표"
+        options={WRITING_GOALS}
+        value={config.writingGoal}
+        onChange={v => setC('writingGoal', v)}
+      />
+
+      {/* 독자 대상 */}
+      <ChipGroup
+        label="독자 대상"
+        options={TARGET_AUDIENCES}
+        value={config.targetAudience}
+        onChange={v => setC('targetAudience', v)}
+      />
+
+      <div className="section-divider" />
+
+      {/* 글쓰기 목적 */}
       <p className="section-label">글쓰기 목적</p>
       <div className="grid grid-cols-2 gap-2 mb-4">
         {PURPOSES.map(p => (
@@ -83,16 +122,22 @@ export default function StepWriting({ config, eventCtx, photos, onChangeConfig, 
       {config.purpose === 'blog' && (
         <div className="mb-4">
           <label className="block text-sm mb-1.5" style={{ color: '#7A4F1E' }}>블로그 글의 주제 <span className="text-red-400">*</span></label>
-          <textarea value={config.blogTopic || ''} onChange={e => setC('blogTopic', e.target.value)}
-            placeholder="예: 놀작 미술교육이 아이의 관찰력을 키우는 방법" />
+          <textarea
+            value={config.blogTopic || ''}
+            onChange={e => setC('blogTopic', e.target.value)}
+            placeholder="예: 놀작 미술교육이 아이의 관찰력을 키우는 방법"
+          />
         </div>
       )}
 
       {config.purpose === 'insta' && (
         <div className="mb-4">
           <label className="block text-sm mb-1.5" style={{ color: '#7A4F1E' }}>해시태그 3개 <span className="text-red-400">*</span></label>
-          <input value={config.instaTags || ''} onChange={e => setC('instaTags', e.target.value)}
-            placeholder="예: #놀작마이아트 #아동미술 #창의교육" />
+          <input
+            value={config.instaTags || ''}
+            onChange={e => setC('instaTags', e.target.value)}
+            placeholder="예: #놀작마이아트 #아동미술 #창의교육"
+          />
         </div>
       )}
 
@@ -100,10 +145,13 @@ export default function StepWriting({ config, eventCtx, photos, onChangeConfig, 
         <div className="mb-4">
           <label className="block text-sm mb-1.5" style={{ color: '#7A4F1E' }}>원하는 글자 수</label>
           <div className="flex items-center gap-3">
-            <input type="number" min={100} max={2000} value={config.introLength || 500}
+            <input
+              type="number" min={100} max={2000}
+              value={config.introLength || 500}
               onChange={e => setC('introLength', Number(e.target.value))}
-              className="w-28" />
-            <span className="text-sm" style={{ color: '#B07D3A' }}>자 (최대 2,000자)</span>
+              style={{ width: '80px' }}
+            />
+            <span className="text-sm" style={{ color: '#B07D3A' }}>자 (100~2,000자)</span>
           </div>
         </div>
       )}
@@ -139,7 +187,7 @@ export default function StepWriting({ config, eventCtx, photos, onChangeConfig, 
               placeholder="예: 사물을 깊게 관찰하는 눈이 생기고 자신감이 붙었어요..." />
           </div>
           <div className="mb-3">
-            <label className="block text-sm mb-1.5" style={{ color: '#7A4F1E' }}>자랑거리 <span className="text-xs" style={{ color: '#B07D3A' }}>(수상, 생기부 등)</span></label>
+            <label className="block text-sm mb-1.5" style={{ color: '#7A4F1E' }}>자랑거리</label>
             <textarea value={eventCtx.achievement} onChange={e => setE('achievement', e.target.value)}
               placeholder="예: 교내 미술대회 최우수상, 과학상상화 대회 입상..." />
           </div>
@@ -166,8 +214,41 @@ export default function StepWriting({ config, eventCtx, photos, onChangeConfig, 
         </div>
       )}
 
-      {/* 사진 첨부 */}
       <div className="section-divider" />
+
+      {/* 문장 스타일 */}
+      <p className="section-label">나만의 문장 스타일</p>
+
+      <ChipGroup
+        label="문장 호흡"
+        options={SENTENCE_RHYTHMS}
+        value={config.sentenceRhythm}
+        onChange={v => setC('sentenceRhythm', v)}
+      />
+      <ChipGroup
+        label="감정 표현 방식"
+        options={EMOTION_STYLES}
+        value={config.emotionStyle}
+        onChange={v => setC('emotionStyle', v)}
+      />
+      {config.purpose !== 'insta' && (
+        <ChipGroup
+          label="글 시작 방식"
+          options={OPENING_STYLES}
+          value={config.openingStyle}
+          onChange={v => setC('openingStyle', v)}
+        />
+      )}
+      <ChipGroup
+        label="선호하는 글 스타일"
+        options={WRITING_STYLES}
+        value={config.writingStyle}
+        onChange={v => setC('writingStyle', v)}
+      />
+
+      <div className="section-divider" />
+
+      {/* 사진 첨부 */}
       <p className="section-label">사진 첨부 <span className="font-normal normal-case text-xs" style={{ color: '#B07D3A' }}>(선택)</span></p>
       <p className="text-xs mb-3" style={{ color: '#B07D3A' }}>{PHOTO_HINTS[config.purpose]}</p>
       <input ref={fileRef} type="file" accept="image/*" multiple className="hidden"
@@ -184,7 +265,8 @@ export default function StepWriting({ config, eventCtx, photos, onChangeConfig, 
               사진{i + 1} ✓
             </div>
           ))}
-          <button onClick={() => onChangePhotos([])} className="text-xs px-2 py-1 rounded-full" style={{ background: '#FEE2E2', color: '#DC2626' }}>
+          <button onClick={() => onChangePhotos([])} className="text-xs px-2 py-1 rounded-full"
+            style={{ background: '#FEE2E2', color: '#DC2626' }}>
             전체 삭제
           </button>
         </div>

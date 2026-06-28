@@ -5,34 +5,42 @@ export interface CareerInfo {
   career1period: string
   career2: string
   career2period: string
-  award1: string
-  award2: string
+  awards: string
+  centerKeyword: string
 }
 
 export interface DirectorProfile {
   name: string
   major: string
   career: CareerInfo
-  personality: string[]
-  sentenceRhythm: string
-  emotionStyle: string
-  openingStyle: string
-  writingStyle: string
-  favWords: string[]
+  personality: PersonalitySelection
   likeColor: string
   likeColorReason: string
   avoidColor: string
   avoidColorReason: string
 }
 
+export interface PersonalitySelection {
+  energyDirection: string
+  emotionExpression: string
+  thinkingStyle: string
+  lifeAttitude: string
+  expressionStyle: string
+}
+
 export interface WritingConfig {
   purpose: 'blog' | 'insta' | 'intro' | 'event' | 'free'
+  writingGoal: string
+  targetAudience: string
+  sentenceRhythm: string
+  emotionStyle: string
+  openingStyle: string
+  writingStyle: string
   blogTopic?: string
   instaTags?: string
   introLength?: number
   freeTopic?: string
   freeLength?: string
-  photos?: string[]
 }
 
 export interface EventContext {
@@ -43,7 +51,6 @@ export interface EventContext {
   after: string
   achievement: string
   message: string
-  photos?: string[]
 }
 
 export type Step = 0 | 1 | 2 | 3
@@ -56,14 +63,34 @@ export const PURPOSES = [
   { id: 'free', label: '자유 작성', sub: '직접 주제·분량 입력' },
 ] as const
 
-export const PERSONALITIES = [
-  '꼼꼼하고 체계적', '따뜻하고 공감 잘함', '활발하고 에너지 넘침',
-  '조용하고 사려깊음', '창의적이고 상상력 풍부', '도전적이고 추진력 강함',
-  '외향적이고 사교적', '낙천적이고 긍정적', '유머감각 있고 재치있는',
-  '감수성 풍부하고 섬세한', '내향적이고 독립적', '신중하고 분석적',
-  '완벽주의적이고 까다로운', '고집 있고 소신 뚜렷한', '감정 기복이 있고 솔직한',
-  '걱정이 많고 신경 쓰는 게 많은', '직설적이고 거침없는', '느긋하고 여유로운',
+export const WRITING_GOALS = [
+  '공감 얻기', '정보 전달', '신뢰 구축', '감동 주기',
 ]
+
+export const TARGET_AUDIENCES = ['학부모', '원장 동료', '일반인']
+
+export const PERSONALITY_CATEGORIES = {
+  energyDirection: {
+    label: '에너지 방향',
+    options: ['외향적이고 사교적', '내향적이고 독립적'],
+  },
+  emotionExpression: {
+    label: '감정 표현',
+    options: ['따뜻하고 공감 잘함', '직설적이고 거침없는', '감정 기복이 있고 솔직한', '절제하고 담담한 편'],
+  },
+  thinkingStyle: {
+    label: '사고 방식',
+    options: ['꼼꼼하고 체계적', '창의적이고 상상력 풍부', '신중하고 분석적', '완벽주의적이고 까다로운'],
+  },
+  lifeAttitude: {
+    label: '생활 태도',
+    options: ['도전적이고 추진력 강함', '느긋하고 여유로운', '낙천적이고 긍정적', '걱정이 많고 신경 쓰는 게 많은'],
+  },
+  expressionStyle: {
+    label: '표현 방식',
+    options: ['활발하고 에너지 넘침', '조용하고 사려깊음', '유머감각 있고 재치있는', '감수성 풍부하고 섬세한'],
+  },
+} as const
 
 export const WRITING_STYLES = [
   '논문처럼 논리적', '수필처럼 감성적', '신문기사처럼 명료한',
@@ -96,3 +123,11 @@ export const GRADES = [
 ]
 
 export const DEGREES = ['학사', '석사', '박사', '전문학사', '대학원 수료']
+
+export const MAX_TOKENS: Record<string, number> = {
+  blog: 4000,
+  insta: 500,
+  intro: 4000,
+  event: 2000,
+  free: 4000,
+}
