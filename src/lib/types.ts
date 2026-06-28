@@ -67,7 +67,7 @@ export const WRITING_GOALS = [
   '공감 얻기', '정보 전달', '신뢰 구축', '감동 주기',
 ]
 
-export const TARGET_AUDIENCES = ['학부모', '원장 동료', '일반인']
+export const TARGET_AUDIENCES = ['학부모', '일반인' , '미술학원·교습소 창업예비자', '미술홈스쿨 창업예비자', '미술학원 운영자', '기타'] as const
 
 export const PERSONALITY_CATEGORIES = {
   energyDirection: {

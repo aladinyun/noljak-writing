@@ -123,12 +123,20 @@ export default function StepWriting({ config, eventCtx, photos, onChangeConfig, 
       )}
 
       {config.purpose === 'insta' && (
-        <div className="mb-4">
-          <label className="block text-sm mb-1.5" style={{ color: '#7A4F1E' }}>해시태그 3개 <span className="text-red-400">*</span></label>
-          <input value={config.instaTags || ''} onChange={e => setC('instaTags', e.target.value)}
-            placeholder="예: #놀작마이아트 #아동미술 #창의교육" />
-        </div>
-      )}
+  <div className="mb-4">
+    <label className="block text-sm mb-1.5" style={{ color: '#7A4F1E' }}>해시태그 3개 <span className="text-red-400">*</span></label>
+    <textarea
+      value={config.instaTags || ''}
+      onChange={e => setC('instaTags', e.target.value)}
+      placeholder="예: #놀작마이아트 #아동미술 #창의교육"
+      maxLength={50}
+      style={{ minHeight: '60px' }}
+    />
+    <p className="text-xs mt-1 text-right" style={{ color: '#B07D3A' }}>
+      {(config.instaTags || '').length}/50자
+    </p>
+  </div>
+)}
 
       {config.purpose === 'intro' && (
         <div className="mb-4">
