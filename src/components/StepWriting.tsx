@@ -157,15 +157,23 @@ const handlePhotos = async (files: FileList | null) => {
 )}
 
       {config.purpose === 'intro' && (
-        <div className="mb-4">
-          <label className="block text-sm mb-1.5" style={{ color: '#7A4F1E' }}>원하는 글자 수</label>
-          <div className="flex items-center gap-3">
-            <input type="number" min={100} max={2000} value={config.introLength || 500}
-              onChange={e => setC('introLength', Number(e.target.value))} style={{ width: '80px' }} />
-            <span className="text-sm" style={{ color: '#B07D3A' }}>자 (100~2,000자)</span>
-          </div>
-        </div>
-      )}
+  <div className="mb-4">
+    <label className="block text-sm mb-1.5" style={{ color: '#7A4F1E' }}>원하는 글자 수</label>
+    <div className="flex items-center gap-3">
+      <input
+        type="number" min={100} max={2000}
+        value={config.introLength ?? ''}
+        onChange={e => {
+          const val = e.target.value
+          setC('introLength', val === '' ? undefined : Number(val))
+        }}
+        placeholder="500"
+        style={{ width: '80px' }}
+      />
+      <span className="text-sm" style={{ color: '#B07D3A' }}>자 (100~2,000자)</span>
+    </div>
+  </div>
+)}
 
       {config.purpose === 'event' && (
         <div className="rounded-xl p-4 mb-4 border" style={{ background: '#FFFBF3', borderColor: '#F0D9A8' }}>
