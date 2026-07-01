@@ -45,8 +45,9 @@ const BLOG_GUIDELINE = `
 - 본문 구성:
   - 핵심 키워드 5~6회 자연스럽게 반복
   - 이론(놀작 교육철학) + 실제 사례(수업 장면, 아이 변화) 병행
-  - 문단별 사진 위치 [사진1] [사진2] 형태로 명시
-  - 소제목 활용 권장`
+  - 첨부 사진이 있다면 사진 속 작품, 재료, 아이의 행동을 구체적으로 반영
+  - 문단별 사진 위치 [사진1] [사진2] 형태로 자연스럽게 명시
+  - 소제목 활용 권장
 
 const EVENT_PROMPT = `
 너는 15년 역사의 미술교육 브랜드 '놀작마이아트'의 교육 가치를 누구보다 깊이 이해하는 교육원 원장이자 엄마야.
@@ -77,9 +78,9 @@ export function buildPrompt(
   eventCtx?: EventContext,
   photoDescriptions?: string[]
 ): string {
-  const photoContext = photoDescriptions && photoDescriptions.length > 0
-    ? `\n[첨부 사진 분석]\n${photoDescriptions.map((d, i) => `사진${i + 1}: ${d}`).join('\n')}`
-    : ''
+ const photoContext = photoDescriptions && photoDescriptions.length > 0
+  ? `\n[첨부 사진에서 추출한 글쓰기 재료]\n${photoDescriptions.join('\n\n')}`
+  : '' 
 
   const personalityDesc = getPersonalityDescription(profile.personality)
 
@@ -143,7 +144,10 @@ ${styleGuide}
 - 실제 그 사람이 쓴 것처럼 자연스럽게
 - 결과물(글)만 출력, 설명 없이
 - 반드시 1600자 이상 완성된 글로 작성할 것 (절대 중간에 끊지 말 것)
-
+- 첨부 사진 분석이 있다면 사진에서 실제로 관찰된 장면을 최소 2개 문단에 구체적으로 반영할 것
+- 사진 속 작품, 재료, 아이의 행동, 수업 장면을 일반적인 홍보 문구보다 우선해서 활용할 것
+- 사진만으로 알 수 없는 아이의 감정, 성격, 학습 성과는 단정하지 말 것
+- 사진을 활용할 때는 [사진1], [사진2] 위치 표시를 본문 흐름에 맞게 자연스럽게 넣을 것
 블로그 글을 작성해주세요:`
   }
 
