@@ -76,7 +76,7 @@ const handlePhotos = async (files: FileList | null) => {
     if (!config.targetAudience) missing.push('독자 대상')
     if (!config.sentenceRhythm) missing.push('문장 호흡')
     if (!config.emotionStyle) missing.push('감정 표현 방식')
-    if (!config.purpose !== 'insta' && !config.openingStyle) missing.push('글 시작 방식')
+    if (config.purpose !== 'insta' && !config.openingStyle) missing.push('글 시작 방식')
     if (!config.writingStyle) missing.push('선호하는 글 스타일')
     if (config.purpose === 'blog' && !config.blogTopic) missing.push('블로그 글의 주제')
     if (config.purpose === 'insta' && !config.instaTags) missing.push('인스타그램 해시태그')
