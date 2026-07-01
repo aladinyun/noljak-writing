@@ -16,11 +16,11 @@ interface Props {
 }
 
 const PHOTO_HINTS: Record<string, string> = {
-  blog: '수업 현장, 아이 작품, 센터 모습 사진을 올려주세요 (최대 5장)',
-  insta: '피드에 올릴 사진을 업로드해주세요 (최대 5장)',
-  intro: '원장님 사진 또는 센터 사진을 올려주세요 (최대 5장)',
+  blog: '수업 현장, 아이 작품, 센터 모습 사진을 올려주세요 (최대 3장)',
+  insta: '피드에 올릴 사진을 업로드해주세요 (최대 3장)',
+  intro: '원장님 사진 또는 센터 사진을 올려주세요 (최대 3장)',
   event: '아이의 작품이나 성장 과정 사진을 올려주세요 (최대 3장)',
-  free: '글과 관련된 사진을 올려주세요 (최대 5장)',
+  free: '글과 관련된 사진을 올려주세요 (최대 3장)',
 }
 
 export default function StepWriting({ config, eventCtx, photos, onChangeConfig, onChangeEvent, onChangePhotos, onBack, onGenerate }: Props) {
@@ -76,7 +76,7 @@ const handlePhotos = async (files: FileList | null) => {
     if (!config.targetAudience) missing.push('독자 대상')
     if (!config.sentenceRhythm) missing.push('문장 호흡')
     if (!config.emotionStyle) missing.push('감정 표현 방식')
-    if (!config.openingStyle) missing.push('글 시작 방식')
+    if (!config.purpose !== 'insta' && !config.openingStyle) missing.push('글 시작 방식')
     if (!config.writingStyle) missing.push('선호하는 글 스타일')
     if (config.purpose === 'blog' && !config.blogTopic) missing.push('블로그 글의 주제')
     if (config.purpose === 'insta' && !config.instaTags) missing.push('인스타그램 해시태그')
