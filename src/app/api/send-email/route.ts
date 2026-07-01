@@ -1,3 +1,4 @@
+import { hasValidAuthCookie } from '@/lib/auth'
 import { NextRequest, NextResponse } from 'next/server'
 import { Resend } from 'resend'
 
@@ -13,6 +14,10 @@ export async function POST(req: NextRequest) {
       intro: '소개글',
       event: '이벤트 응모글',
       free: '작성 글',
+    }
+
+    if (!hasValidAuthCookie()) {
+      return NextResponse.json({ error: '인증이 필요합니다.' }, { status: 401 })
     }
 
     await resend.emails.send({

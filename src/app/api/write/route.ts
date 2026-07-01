@@ -1,3 +1,4 @@
+import { hasValidAuthCookie } from '@/lib/auth'
 import { NextRequest, NextResponse } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
 import { buildPrompt } from '@/lib/prompt'
@@ -14,6 +15,9 @@ const MAX_TOKENS: Record<string, number> = {
 }
 
 export async function POST(req: NextRequest) {
+  if (!hasValidAuthCookie()) {
+    return NextResponse.json({ error: '인증이 필요합니다.' }, { status: 401 })
+  }
   try {
     const body = await req.json()
     const { profile, config, eventCtx, photos } = body as {
