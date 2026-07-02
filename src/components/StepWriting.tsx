@@ -1,7 +1,7 @@
 'use client'
 
 import { useRef } from 'react'
-import type { WritingConfig, EventContext } from '@/lib/types'
+import type { WritingConfig, EventContext, WritingReference } from '@/lib/types'
 import { PURPOSES, WRITING_GOALS, TARGET_AUDIENCES, SENTENCE_RHYTHMS, EMOTION_STYLES, OPENING_STYLES, WRITING_STYLES, GRADES } from '@/lib/types'
 
 interface Props {
@@ -70,6 +70,19 @@ const handlePhotos = async (files: FileList | null) => {
     onChangePhotos(photos.filter((_, i) => i !== index))
   }
 
+  const showReferences = config.purpose === 'blog' || config.purpose === 'free'
+  const references = config.references ?? []
+  const setRef = (i: number, key: keyof WritingReference, val: string) => {
+    setC('references', references.map((r, idx) => idx === i ? { ...r, [key]: val } : r))
+  }
+  const addRef = () => {
+    if (references.length >= 2) return
+    setC('references', [...references, { source: '', originalSource: '', content: '', angle: '', confirmed: true }])
+  }
+  const removeRef = (i: number) => {
+    setC('references', references.filter((_, idx) => idx !== i))
+  }
+
   const validate = () => {
     const missing: string[] = []
     if (!config.writingGoal) missing.push('글쓰기 목표')
@@ -86,6 +99,12 @@ const handlePhotos = async (files: FileList | null) => {
       if (!eventCtx.after) missing.push('놀작 후 변화')
     }
     if (config.purpose === 'free' && !config.freeTopic) missing.push('글의 주제')
+    if (showReferences) {
+      references.forEach((r, i) => {
+        if (r.content.trim() && !r.angle.trim()) missing.push(`참고자료 ${i + 1}의 활용 관점`)
+        if (r.angle.trim() && !r.content.trim()) missing.push(`참고자료 ${i + 1}의 핵심 내용`)
+      })
+    }
     if (missing.length > 0) {
       alert(`아래 항목을 입력해주세요:\n\n${missing.map(m => `• ${m}`).join('\n')}`)
       return false
@@ -231,6 +250,58 @@ const handlePhotos = async (files: FileList | null) => {
               placeholder="예: A4 1매, 500자 내외" />
           </div>
         </div>
+      )}
+
+      {showReferences && (
+        <>
+          <div className="section-divider" />
+          <p className="section-label">
+            참고자료 <span className="font-normal normal-case text-xs" style={{ color: '#B07D3A' }}>(선택 · 최대 2개)</span>
+          </p>
+          <p className="text-xs mb-3" style={{ color: '#B07D3A' }}>
+            신문기사·블로그에서 참고할 핵심 내용을 직접 복사해 붙여넣어 주세요. (자동 수집은 하지 않습니다)
+          </p>
+
+          <div className="space-y-3 mb-3">
+            {references.map((ref, i) => (
+              <div key={i} className="rounded-xl p-4 border" style={{ background: '#FFFBF3', borderColor: '#F0D9A8' }}>
+                <div className="flex items-center justify-between mb-3">
+                  <p className="text-xs font-semibold" style={{ color: '#E8820C' }}>참고자료 {i + 1}</p>
+                  <button onClick={() => removeRef(i)} className="text-xs px-2 py-1 rounded-md"
+                    style={{ background: '#FEE2E2', color: '#DC2626' }}>삭제</button>
+                </div>
+                <div className="grid grid-cols-2 gap-2 mb-3">
+                  <div>
+                    <label className="block text-sm mb-1.5" style={{ color: '#7A4F1E' }}>매체명/출처 <span className="text-xs" style={{ color: '#B07D3A' }}>(선택)</span></label>
+                    <input value={ref.source} onChange={e => setRef(i, 'source', e.target.value)} placeholder="예: 농민신문" />
+                  </div>
+                  <div>
+                    <label className="block text-sm mb-1.5" style={{ color: '#7A4F1E' }}>원출처 <span className="text-xs" style={{ color: '#B07D3A' }}>(선택)</span></label>
+                    <input value={ref.originalSource} onChange={e => setRef(i, 'originalSource', e.target.value)} placeholder="예: 뉴욕타임스" />
+                  </div>
+                </div>
+                <div className="mb-3">
+                  <label className="block text-sm mb-1.5" style={{ color: '#7A4F1E' }}>참고할 핵심 내용 <span className="text-red-400">*</span></label>
+                  <textarea value={ref.content} onChange={e => setRef(i, 'content', e.target.value)}
+                    placeholder="기사·블로그에서 참고할 부분을 그대로 복사해 붙여넣어 주세요" />
+                </div>
+                <div>
+                  <label className="block text-sm mb-1.5" style={{ color: '#7A4F1E' }}>이 참고자료를 어떤 관점으로 쓸지 <span className="text-red-400">*</span></label>
+                  <textarea value={ref.angle} onChange={e => setRef(i, 'angle', e.target.value)}
+                    placeholder="예: 낯선 조합을 시도하는 사례로 인용" />
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {references.length < 2 && (
+            <button onClick={addRef}
+              className="w-full py-3 rounded-xl border-2 border-dashed text-sm transition-all mb-2"
+              style={{ borderColor: '#E5C98A', color: '#B07D3A' }}>
+              + 참고자료 추가하기 ({references.length}/2)
+            </button>
+          )}
+        </>
       )}
 
       <div className="section-divider" />

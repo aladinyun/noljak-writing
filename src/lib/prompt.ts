@@ -62,6 +62,22 @@ const EVENT_PROMPT = `
 6. 감동적인 제목 자동 생성
 7. 결과물(수기 본문)만 출력, 설명이나 부연 없이`
 
+function buildReferenceContext(config: WritingConfig): string {
+  const refs = (config.references || []).filter(r => r.confirmed && r.content.trim())
+  if (refs.length === 0) return ''
+
+  const blocks = refs.map(r => {
+    const src = r.source.trim() || '출처 미기재'
+    const origin = r.originalSource.trim() ? ` (원출처: ${r.originalSource.trim()})` : ''
+    return `- 출처: ${src}${origin}
+- 핵심 키워드: ${r.summary || ''}
+- 활용 방향: ${r.angle}
+- 지침: 위 참고자료의 문장 구조를 그대로 모방하지 말고, 사실관계와 키워드만 활용해 원장 자신의 문체로 완전히 재구성할 것. 원문을 그대로 인용하지 말 것.`
+  }).join('\n\n')
+
+  return `\n[참고자료]\n${blocks}`
+}
+
 function getPersonalityDescription(personality: DirectorProfile['personality']): string {
   const parts = []
   if (personality.energyDirection) parts.push(personality.energyDirection)
@@ -81,6 +97,8 @@ export function buildPrompt(
  const photoContext = photoDescriptions && photoDescriptions.length > 0
   ? `\n[첨부 사진에서 추출한 글쓰기 재료]\n${photoDescriptions.join('\n\n')}`
   : '' 
+
+  const referenceContext = buildReferenceContext(config)
 
   const personalityDesc = getPersonalityDescription(profile.personality)
 
@@ -138,6 +156,7 @@ ${config.blogTopic}
 ${photoContext}
 ${baseProfile}
 ${styleGuide}
+${referenceContext}
 
 [작성 규칙]
 - 스타일 가이드를 충실히 반영
@@ -192,6 +211,7 @@ ${config.freeLength ? `[분량] ${config.freeLength} (반드시 완성된 글로
 ${photoContext}
 ${baseProfile}
 ${styleGuide}
+${referenceContext}
 
 [작성 규칙]
 - 스타일 가이드 충실히 반영

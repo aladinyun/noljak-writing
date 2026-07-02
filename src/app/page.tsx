@@ -5,6 +5,7 @@ import Image from 'next/image'
 import StepAuth from '@/components/StepAuth'
 import StepProfile from '@/components/StepProfile'
 import StepWriting from '@/components/StepWriting'
+import StepReference from '@/components/StepReference'
 import StepResult from '@/components/StepResult'
 import type { Step, DirectorProfile, WritingConfig, EventContext } from '@/lib/types'
 
@@ -36,6 +37,8 @@ export default function Home() {
   const [result, setResult] = useState({ text: '', charCount: 0 })
   const [hasSavedProfile, setHasSavedProfile] = useState(false)
   const [savedName, setSavedName] = useState('')
+  const [showRefConfirm, setShowRefConfirm] = useState(false)
+  const [refLoading, setRefLoading] = useState(false)
 
   useEffect(() => {
     try {
@@ -49,7 +52,9 @@ export default function Home() {
     } catch {}
   }, [])
 
-  const generate = async () => {
+  const generate = async (cfgArg?: WritingConfig) => {
+    const cfg = cfgArg ?? config
+    setShowRefConfirm(false)
     setStep(3)
     setResult({ text: '', charCount: 0 })
     try {
@@ -57,8 +62,8 @@ export default function Home() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          profile, config,
-          eventCtx: config.purpose === 'event' ? eventCtx : undefined,
+          profile, config: cfg,
+          eventCtx: cfg.purpose === 'event' ? eventCtx : undefined,
           photos: photos.length > 0 ? photos : undefined,
         }),
       })
@@ -69,11 +74,58 @@ export default function Home() {
     }
   }
 
+  // 글쓰기 설정에서 "글 생성하기" 클릭 시 진입점.
+  // 참고자료(블로그/자유작성)가 있으면 요약 후 확인 단계로, 없으면 바로 생성.
+  const startGenerate = async () => {
+    const refsEnabled = config.purpose === 'blog' || config.purpose === 'free'
+    const refs = config.references ?? []
+    const active = refsEnabled ? refs.filter(r => r.content.trim()) : []
+    if (active.length === 0) {
+      generate()
+      return
+    }
+
+    setShowRefConfirm(true)
+    setRefLoading(true)
+    try {
+      const updated = await Promise.all(refs.map(async (r) => {
+        if (!r.content.trim()) return r
+        try {
+          const res = await fetch('/api/summarize-reference', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ text: r.content }),
+          })
+          const data = await res.json()
+          return { ...r, summary: data.summary || '', confirmed: true }
+        } catch {
+          return { ...r, summary: '', confirmed: true }
+        }
+      }))
+      setConfig({ ...config, references: updated })
+    } finally {
+      setRefLoading(false)
+    }
+  }
+
+  const toggleRef = (index: number, confirmed: boolean) => {
+    const refs = config.references ?? []
+    setConfig({ ...config, references: refs.map((r, i) => i === index ? { ...r, confirmed } : r) })
+  }
+
+  const generateWithoutRefs = () => {
+    const refs = config.references ?? []
+    const cleared = { ...config, references: refs.map(r => ({ ...r, confirmed: false })) }
+    setConfig(cleared)
+    generate(cleared)
+  }
+
   const resetAll = () => {
     setStep(1)
     setConfig(defaultConfig)
     setEventCtx(defaultEvent)
     setPhotos([])
+    setShowRefConfirm(false)
   }
 
   return (
@@ -151,11 +203,23 @@ export default function Home() {
           )}
 
           {/* Step 2: 글쓰기 설정 */}
-          {step === 2 && (
+          {step === 2 && !showRefConfirm && (
             <StepWriting
               config={config} eventCtx={eventCtx} photos={photos}
               onChangeConfig={setConfig} onChangeEvent={setEventCtx} onChangePhotos={setPhotos}
-              onBack={() => setStep(1)} onGenerate={generate}
+              onBack={() => setStep(1)} onGenerate={startGenerate}
+            />
+          )}
+
+          {/* Step 2.5: 참고자료 확인 (블로그/자유작성, 참고자료 입력 시) */}
+          {step === 2 && showRefConfirm && (
+            <StepReference
+              references={config.references ?? []}
+              loading={refLoading}
+              onToggle={toggleRef}
+              onBack={() => setShowRefConfirm(false)}
+              onGenerate={() => generate()}
+              onGenerateWithoutRefs={generateWithoutRefs}
             />
           )}
 

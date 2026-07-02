@@ -28,6 +28,15 @@ export interface PersonalitySelection {
   expressionStyle: string
 }
 
+export interface WritingReference {
+  source: string          // 매체명/출처 (2차 보도 매체명 포함)
+  originalSource: string  // 원출처 (2차 보도인 경우 원 매체)
+  content: string         // 원장이 붙여넣은 참고 핵심 내용
+  angle: string           // 이 참고자료를 어떤 관점으로 쓸지
+  summary?: string        // API로 추출한 핵심 팩트·키워드 요약
+  confirmed: boolean      // 확인 단계에서 "이대로 반영" 여부
+}
+
 export interface WritingConfig {
   purpose: 'blog' | 'insta' | 'intro' | 'event' | 'free'
   writingGoal: string
@@ -41,6 +50,7 @@ export interface WritingConfig {
   introLength?: number
   freeTopic?: string
   freeLength?: string
+  references?: WritingReference[]  // 블로그/자유작성 전용 참고자료
 }
 
 export interface EventContext {
