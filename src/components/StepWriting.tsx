@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef } from 'react'
+import { useRef, useState } from 'react'
 import type { WritingConfig, EventContext, WritingReference } from '@/lib/types'
 import { PURPOSES, WRITING_GOALS, TARGET_AUDIENCES, SENTENCE_RHYTHMS, EMOTION_STYLES, OPENING_STYLES, WRITING_STYLES, GRADES } from '@/lib/types'
 
@@ -72,15 +72,24 @@ const handlePhotos = async (files: FileList | null) => {
 
   const showReferences = config.purpose === 'blog' || config.purpose === 'free'
   const references = config.references ?? []
+  // 참고자료 필드별 인라인 에러 (키: `${index}-content` / `${index}-angle`)
+  const [refErrors, setRefErrors] = useState<Record<string, boolean>>({})
   const setRef = (i: number, key: keyof WritingReference, val: string) => {
     setC('references', references.map((r, idx) => idx === i ? { ...r, [key]: val } : r))
+    setRefErrors(prev => {
+      const next = { ...prev }
+      delete next[`${i}-${key}`]
+      return next
+    })
   }
   const addRef = () => {
     if (references.length >= 2) return
     setC('references', [...references, { source: '', originalSource: '', content: '', angle: '', confirmed: true }])
+    setRefErrors({})
   }
   const removeRef = (i: number) => {
     setC('references', references.filter((_, idx) => idx !== i))
+    setRefErrors({})
   }
 
   const validate = () => {
@@ -99,12 +108,20 @@ const handlePhotos = async (files: FileList | null) => {
       if (!eventCtx.after) missing.push('놀작 후 변화')
     }
     if (config.purpose === 'free' && !config.freeTopic) missing.push('글의 주제')
+    const nextRefErrors: Record<string, boolean> = {}
     if (showReferences) {
       references.forEach((r, i) => {
-        if (r.content.trim() && !r.angle.trim()) missing.push(`참고자료 ${i + 1}의 활용 관점`)
-        if (r.angle.trim() && !r.content.trim()) missing.push(`참고자료 ${i + 1}의 핵심 내용`)
+        if (r.content.trim() && !r.angle.trim()) {
+          missing.push(`참고자료 ${i + 1}의 활용 관점`)
+          nextRefErrors[`${i}-angle`] = true
+        }
+        if (r.angle.trim() && !r.content.trim()) {
+          missing.push(`참고자료 ${i + 1}의 핵심 내용`)
+          nextRefErrors[`${i}-content`] = true
+        }
       })
     }
+    setRefErrors(nextRefErrors)
     if (missing.length > 0) {
       alert(`아래 항목을 입력해주세요:\n\n${missing.map(m => `• ${m}`).join('\n')}`)
       return false
@@ -283,12 +300,20 @@ const handlePhotos = async (files: FileList | null) => {
                 <div className="mb-3">
                   <label className="block text-sm mb-1.5" style={{ color: '#7A4F1E' }}>참고할 핵심 내용 <span className="text-red-400">*</span></label>
                   <textarea value={ref.content} onChange={e => setRef(i, 'content', e.target.value)}
-                    placeholder="기사·블로그에서 참고할 부분을 그대로 복사해 붙여넣어 주세요" />
+                    placeholder="기사·블로그에서 참고할 부분을 그대로 복사해 붙여넣어 주세요"
+                    style={refErrors[`${i}-content`] ? { borderColor: '#DC2626' } : undefined} />
+                  {refErrors[`${i}-content`] && (
+                    <p className="text-xs mt-1" style={{ color: '#DC2626' }}>참고할 핵심 내용을 입력해주세요.</p>
+                  )}
                 </div>
                 <div>
                   <label className="block text-sm mb-1.5" style={{ color: '#7A4F1E' }}>이 참고자료를 어떤 관점으로 쓸지 <span className="text-red-400">*</span></label>
                   <textarea value={ref.angle} onChange={e => setRef(i, 'angle', e.target.value)}
-                    placeholder="예: 낯선 조합을 시도하는 사례로 인용" />
+                    placeholder="예: 낯선 조합을 시도하는 사례로 인용"
+                    style={refErrors[`${i}-angle`] ? { borderColor: '#DC2626' } : undefined} />
+                  {refErrors[`${i}-angle`] && (
+                    <p className="text-xs mt-1" style={{ color: '#DC2626' }}>이 참고자료의 활용 관점을 입력해주세요.</p>
+                  )}
                 </div>
               </div>
             ))}
