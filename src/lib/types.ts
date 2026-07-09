@@ -12,7 +12,7 @@ export interface CareerInfo {
 export interface DirectorProfile {
   name: string
   major: string
-  targetAgeGroup: string
+  targetAgeGroup: string[]   // 주 대상 연령층 (최대 2개, '전체'는 단독)
   centerLocation?: string
   career: CareerInfo
   personality: PersonalitySelection
@@ -20,6 +20,19 @@ export interface DirectorProfile {
   likeColorReason: string
   avoidColor: string
   avoidColorReason: string
+}
+
+// 저장된 프로필 로드 시 구버전 데이터 마이그레이션.
+// - targetAgeGroup이 과거 단일 string으로 저장된 경우 배열로 변환 (빈 문자열은 빈 배열).
+export function migrateProfile(raw: unknown): DirectorProfile {
+  const p = { ...(raw as Record<string, unknown>) }
+  const t = p.targetAgeGroup
+  if (typeof t === 'string') {
+    p.targetAgeGroup = t ? [t] : []
+  } else if (!Array.isArray(t)) {
+    p.targetAgeGroup = []
+  }
+  return p as unknown as DirectorProfile
 }
 
 export interface PersonalitySelection {

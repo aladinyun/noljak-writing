@@ -1,8 +1,8 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import type { DirectorProfile } from '@/lib/types'
-import { PERSONALITY_CATEGORIES, COLORS, DEGREES, TARGET_AGE_GROUPS } from '@/lib/types'
+import { PERSONALITY_CATEGORIES, COLORS, DEGREES, TARGET_AGE_GROUPS, migrateProfile } from '@/lib/types'
 
 interface Props {
   profile: DirectorProfile
@@ -27,10 +27,32 @@ export default function StepProfile({ profile, onChange, onNext }: Props) {
   const setPersonality = (key: keyof typeof profile.personality, val: string) =>
     onChange({ ...profile, personality: { ...profile.personality, [key]: val } })
 
+  const [locError, setLocError] = useState(false)
+
+  // 주 대상 연령층 다중선택 (최대 2개, '전체'는 단독 상호배타)
+  const ALL_AGE = '전체'
+  const ageGroups: string[] = Array.isArray(profile.targetAgeGroup) ? profile.targetAgeGroup : []
+  const toggleAge = (g: string) => {
+    if (g === ALL_AGE) {
+      // '전체' 토글: 선택돼 있으면 해제, 아니면 '전체'만 남김
+      set('targetAgeGroup', ageGroups.includes(ALL_AGE) ? [] : [ALL_AGE])
+      return
+    }
+    let next = ageGroups.filter(x => x !== ALL_AGE) // 개별 선택 시 '전체' 자동 해제
+    if (next.includes(g)) {
+      next = next.filter(x => x !== g) // 이미 선택된 항목이면 해제
+    } else if (next.length >= 2) {
+      next = [next[1], g] // 이미 2개면 가장 먼저 선택한 항목을 밀어내고 교체(FIFO)
+    } else {
+      next = [...next, g]
+    }
+    set('targetAgeGroup', next)
+  }
+
   useEffect(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY)
-      if (saved) onChange(JSON.parse(saved))
+      if (saved) onChange(migrateProfile(JSON.parse(saved)))
     } catch {}
   }, [])
 
@@ -54,10 +76,14 @@ export default function StepProfile({ profile, onChange, onNext }: Props) {
     if (!p.thinkingStyle) missing.push('성격 - 사고 방식')
     if (!p.lifeAttitude) missing.push('성격 - 생활 태도')
     if (!p.expressionStyle) missing.push('성격 - 표현 방식')
+    // 센터 지역 필수: alert 대신 인라인 에러로 표시
+    const locMissing = !profile.centerLocation?.trim()
+    setLocError(locMissing)
     if (missing.length > 0) {
       alert(`아래 항목을 입력해주세요:\n\n${missing.map(m => `• ${m}`).join('\n')}`)
       return false
     }
+    if (locMissing) return false
     return true
   }
 
@@ -79,23 +105,29 @@ export default function StepProfile({ profile, onChange, onNext }: Props) {
 
       <div className="mb-3">
         <label className="block text-sm mb-1.5" style={{ color: '#7A4F1E' }}>
-          센터 지역 <span className="text-xs" style={{ color: '#B07D3A' }}>(선택)</span>
+          센터 지역 <span className="text-red-400">*</span>
         </label>
-        <input value={profile.centerLocation || ''} onChange={e => set('centerLocation', e.target.value)}
-          placeholder="예: 경기도 화성시 동탄" maxLength={20} />
-        <p className="text-xs mt-1" style={{ color: '#B07D3A' }}>네이버·구글 채널 소개글 작성 시 활용됩니다 (선택)</p>
+        <input value={profile.centerLocation || ''}
+          onChange={e => { set('centerLocation', e.target.value); setLocError(false) }}
+          placeholder="예: 경기도 화성시 동탄" maxLength={20}
+          style={locError ? { borderColor: '#DC2626' } : undefined} />
+        {locError ? (
+          <p className="text-xs mt-1" style={{ color: '#DC2626' }}>센터 지역을 입력해주세요 (예: 경기도 화성시 동탄)</p>
+        ) : (
+          <p className="text-xs mt-1" style={{ color: '#B07D3A' }}>네이버·구글 채널 소개글 작성 시 활용됩니다</p>
+        )}
       </div>
 
       <div className="mb-3">
         <label className="block text-sm mb-2" style={{ color: '#7A4F1E' }}>
-          주 대상 연령층 <span className="text-xs font-normal" style={{ color: '#B07D3A' }}>(1개 선택)</span>
+          주 대상 연령층 <span className="text-xs font-normal" style={{ color: '#B07D3A' }}>(최대 2개, &apos;전체&apos;는 단독)</span>
         </label>
         <div className="flex flex-wrap gap-2">
           {TARGET_AGE_GROUPS.map(g => (
             <button
               key={g}
-              onClick={() => set('targetAgeGroup', g)}
-              className={`chip ${profile.targetAgeGroup === g ? 'selected' : ''}`}
+              onClick={() => toggleAge(g)}
+              className={`chip ${ageGroups.includes(g) ? 'selected' : ''}`}
             >
               {g}
             </button>
@@ -208,7 +240,7 @@ export default function StepProfile({ profile, onChange, onNext }: Props) {
       <div className="section-divider" />
 
       {/* 색상 */}
-      <p className="section-label">색상 이야기 <span className="font-normal normal-case text-xs" style={{ color: '#B07D3A' }}>(수기·감성 글 작성 시 활용)</span></p>
+      <p className="section-label">색상 이야기 <span className="font-normal normal-case text-xs" style={{ color: '#B07D3A' }}>(이벤트 수기 작성 시에만 활용됩니다)</span></p>
       {[
         { key: 'likeColor' as const, rKey: 'likeColorReason' as const, label: '가장 좋아하는 색상', ph: '이 색을 좋아하는 이유' },
         { key: 'avoidColor' as const, rKey: 'avoidColorReason' as const, label: '다루기 조심스러운 색상', ph: '이 색이 조심스러운 이유' },

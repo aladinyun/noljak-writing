@@ -8,12 +8,13 @@ import StepWriting from '@/components/StepWriting'
 import StepReference from '@/components/StepReference'
 import StepResult from '@/components/StepResult'
 import type { Step, DirectorProfile, WritingConfig, EventContext } from '@/lib/types'
+import { migrateProfile } from '@/lib/types'
 
 const STEP_LABELS = ['인증', '기본 정보', '글쓰기 설정', '완성']
 const STORAGE_KEY = 'noljak_director_profile'
 
 const defaultProfile: DirectorProfile = {
-  name: '', major: '', targetAgeGroup: '',
+  name: '', major: '', targetAgeGroup: [],
   career: { education: '', degree: '', career1: '', career1period: '', career2: '', career2period: '', awards: '', centerKeyword: '' },
   personality: { energyDirection: '', emotionExpression: '', thinkingStyle: '', lifeAttitude: '', expressionStyle: '' },
   likeColor: '', likeColorReason: '', avoidColor: '', avoidColorReason: '',
@@ -44,7 +45,7 @@ export default function Home() {
     try {
       const saved = localStorage.getItem(STORAGE_KEY)
       if (saved) {
-        const parsed = JSON.parse(saved)
+        const parsed = migrateProfile(JSON.parse(saved))
         setProfile(parsed)
         setHasSavedProfile(true)
         setSavedName(parsed.name || '')

@@ -78,19 +78,31 @@ function buildReferenceContext(config: WritingConfig): string {
   return `\n[참고자료]\n${blocks}`
 }
 
-function getAgeToneGuide(ageGroup: string): string {
-  if (!ageGroup) return ''
+function getAgeToneGuide(ageGroups: string[]): string {
+  const groups = (ageGroups || []).filter(Boolean)
+  if (groups.length === 0) return ''
   const tips: Record<string, string> = {
     '미취학 (3~5세)': '부모의 정서적 안심(안전·정서 발달·즐거움)을 강조하는 톤과 사례로 작성',
     '초등 저학년 (초1~3)': '학습 습관 형성·흥미 유발·기초 창의력 발달을 강조하는 톤과 사례로 작성',
     '초등 고학년 (초4~6)': '학업 연계·구체적 성과·사고력 확장을 강조하는 톤과 사례로 작성',
     '전체': '연령대별 학부모의 관심사를 두루 아우르되 과장 없이 균형 있게 작성',
   }
-  const tip = tips[ageGroup] || '해당 연령층 학부모의 관심사에 맞는 톤과 사례로 작성'
+  const tipFor = (g: string) => tips[g] || '해당 연령층 학부모의 관심사에 맞는 톤과 사례로 작성'
+
+  if (groups.length === 1) {
+    return `
+[주 대상 연령층 반영]
+- 주 대상 연령층: ${groups[0]}
+- ${tipFor(groups[0])}`
+  }
+
+  // 2개 선택: 두 톤을 자연스럽게 함께 반영
+  const detail = groups.map(g => `  · ${g}: ${tipFor(g)}`).join('\n')
   return `
 [주 대상 연령층 반영]
-- 주 대상 연령층: ${ageGroup}
-- ${tip}`
+- 주 대상 연령층: ${groups.join(', ')}
+- ${groups.join('과(와) ')}을(를) 모두 아우르는 톤으로 자연스럽게 함께 반영할 것
+${detail}`
 }
 
 function getPersonalityDescription(personality: DirectorProfile['personality']): string {
@@ -125,14 +137,12 @@ export function buildPrompt(
 [원장님 정보]
 - 이름: ${profile.name}
 - 전공: ${profile.major}${profile.centerLocation?.trim() ? `\n- 센터 지역: ${profile.centerLocation.trim()}` : ''}
-${profile.targetAgeGroup ? `- 주 대상 연령층: ${profile.targetAgeGroup}` : ''}
+${profile.targetAgeGroup?.length ? `- 주 대상 연령층: ${profile.targetAgeGroup.join(', ')}` : ''}
 - 최종 학교: ${profile.career.education} (${profile.career.degree})
 - 주요 경력: ${profile.career.career1} ${profile.career.career1period ? `(${profile.career.career1period}년)` : ''}${profile.career.career2 ? `, ${profile.career.career2} ${profile.career.career2period ? `(${profile.career.career2period}년)` : ''}` : ''}
 ${profile.career.awards ? `- 수상/업적: ${profile.career.awards}` : ''}
 ${profile.career.centerKeyword ? `- 센터 키워드: ${profile.career.centerKeyword}` : ''}
-- 성격: ${personalityDesc}
-- 좋아하는 색상: ${profile.likeColor}${profile.likeColorReason ? ` (${profile.likeColorReason})` : ''}
-- 조심스러운 색상: ${profile.avoidColor}${profile.avoidColorReason ? ` (${profile.avoidColorReason})` : ''}`
+- 성격: ${personalityDesc}`
 
   const ageToneGuide = getAgeToneGuide(profile.targetAgeGroup)
 
@@ -150,6 +160,8 @@ ${profile.career.centerKeyword ? `- 센터 키워드: ${profile.career.centerKey
     return `${EVENT_PROMPT}
 ${NOLJAK_MASTER_GUIDELINE}
 ${baseProfile}
+- 좋아하는 색상: ${profile.likeColor}${profile.likeColorReason ? ` (${profile.likeColorReason})` : ''}
+- 조심스러운 색상: ${profile.avoidColor}${profile.avoidColorReason ? ` (${profile.avoidColorReason})` : ''}
 ${styleGuide}
 
 [아이 성장 이야기]
