@@ -12,6 +12,7 @@ export interface CareerInfo {
 export interface DirectorProfile {
   name: string
   major: string
+  targetAgeGroup: string
   career: CareerInfo
   personality: PersonalitySelection
   likeColor: string
@@ -37,6 +38,8 @@ export interface WritingReference {
   confirmed: boolean      // 확인 단계에서 "이대로 반영" 여부
 }
 
+export type IntroChannel = 'naver' | 'google' | 'blog' | 'insta' | 'kakao'
+
 export interface WritingConfig {
   purpose: 'blog' | 'insta' | 'intro' | 'event' | 'free'
   writingGoal: string
@@ -48,8 +51,12 @@ export interface WritingConfig {
   blogTopic?: string
   instaTags?: string
   introLength?: number
+  introChannel?: IntroChannel   // 소개글 채널 (세션 상태, 프로필 미저장)
   freeTopic?: string
   freeLength?: string
+  freeMode?: 'new' | 'edit'     // 자유작성 모드 (기본 'new')
+  originalText?: string         // edit 모드: 원문
+  editInstructions?: string     // edit 모드: 수정 지시사항
   references?: WritingReference[]  // 블로그/자유작성 전용 참고자료
 }
 
@@ -73,11 +80,21 @@ export const PURPOSES = [
   { id: 'free', label: '자유 작성', sub: '직접 주제·분량 입력' },
 ] as const
 
+export const INTRO_CHANNELS = [
+  { id: 'naver', label: '네이버 스마트플레이스', sub: 'SEO 키워드형 · 900~1000자' },
+  { id: 'google', label: '구글 비즈니스 프로필', sub: '신뢰감 있는 설명형 · 700~750자' },
+  { id: 'blog', label: '블로그/홈페이지 상세소개', sub: '글자 수 직접 입력' },
+  { id: 'insta', label: '인스타그램/페이스북 프로필', sub: '임팩트 한두 문장 · 140~150자' },
+  { id: 'kakao', label: '카카오톡 상태메시지', sub: '초압축 캐치프레이즈 · 50~60자' },
+] as const
+
 export const WRITING_GOALS = [
   '공감 얻기', '정보 전달', '신뢰 구축', '감동 주기',
 ]
 
 export const TARGET_AUDIENCES = ['학부모', '일반인' , '기타']
+
+export const TARGET_AGE_GROUPS = ['미취학 (3~5세)', '초등 저학년 (초1~3)', '초등 고학년 (초4~6)', '전체']
 
 export const PERSONALITY_CATEGORIES = {
   energyDirection: {

@@ -78,6 +78,21 @@ function buildReferenceContext(config: WritingConfig): string {
   return `\n[참고자료]\n${blocks}`
 }
 
+function getAgeToneGuide(ageGroup: string): string {
+  if (!ageGroup) return ''
+  const tips: Record<string, string> = {
+    '미취학 (3~5세)': '부모의 정서적 안심(안전·정서 발달·즐거움)을 강조하는 톤과 사례로 작성',
+    '초등 저학년 (초1~3)': '학습 습관 형성·흥미 유발·기초 창의력 발달을 강조하는 톤과 사례로 작성',
+    '초등 고학년 (초4~6)': '학업 연계·구체적 성과·사고력 확장을 강조하는 톤과 사례로 작성',
+    '전체': '연령대별 학부모의 관심사를 두루 아우르되 과장 없이 균형 있게 작성',
+  }
+  const tip = tips[ageGroup] || '해당 연령층 학부모의 관심사에 맞는 톤과 사례로 작성'
+  return `
+[주 대상 연령층 반영]
+- 주 대상 연령층: ${ageGroup}
+- ${tip}`
+}
+
 function getPersonalityDescription(personality: DirectorProfile['personality']): string {
   const parts = []
   if (personality.energyDirection) parts.push(personality.energyDirection)
@@ -110,6 +125,7 @@ export function buildPrompt(
 [원장님 정보]
 - 이름: ${profile.name}
 - 전공: ${profile.major}
+${profile.targetAgeGroup ? `- 주 대상 연령층: ${profile.targetAgeGroup}` : ''}
 - 최종 학교: ${profile.career.education} (${profile.career.degree})
 - 주요 경력: ${profile.career.career1} ${profile.career.career1period ? `(${profile.career.career1period}년)` : ''}${profile.career.career2 ? `, ${profile.career.career2} ${profile.career.career2period ? `(${profile.career.career2period}년)` : ''}` : ''}
 ${profile.career.awards ? `- 수상/업적: ${profile.career.awards}` : ''}
@@ -117,6 +133,8 @@ ${profile.career.centerKeyword ? `- 센터 키워드: ${profile.career.centerKey
 - 성격: ${personalityDesc}
 - 좋아하는 색상: ${profile.likeColor}${profile.likeColorReason ? ` (${profile.likeColorReason})` : ''}
 - 조심스러운 색상: ${profile.avoidColor}${profile.avoidColorReason ? ` (${profile.avoidColorReason})` : ''}`
+
+  const ageToneGuide = getAgeToneGuide(profile.targetAgeGroup)
 
   const styleGuide = `
 [이 글의 스타일 가이드]
@@ -126,7 +144,7 @@ ${profile.career.centerKeyword ? `- 센터 키워드: ${profile.career.centerKey
 - 감정 표현: ${config.emotionStyle}
 - 글 시작 방식: ${config.openingStyle || '자유'}
 - 선호 문체: ${config.writingStyle}
-- 마무리: "${centerName}은 ${profile.career.centerKeyword || ''}한 교육 환경 속에서 아이 한 명 한 명의 성장을 위해 최선을 다하겠습니다."`
+- 마무리: "${centerName}은 ${profile.career.centerKeyword || ''}한 교육 환경 속에서 아이 한 명 한 명의 성장을 위해 최선을 다하겠습니다."${ageToneGuide}`
 
   if (config.purpose === 'event' && eventCtx) {
     return `${EVENT_PROMPT}
@@ -187,19 +205,61 @@ ${styleGuide}
   }
 
   if (config.purpose === 'intro') {
+    const channel = config.introChannel || 'blog'
+    let lengthSpec = ''
+    let channelGuide = ''
+    if (channel === 'naver') {
+      lengthSpec = '공백 포함 900~1000자'
+      channelGuide = `- 채널: 네이버 스마트플레이스 (검색 노출 고려)
+- 지역명 + 업종(미술교육/창의미술) + 핵심 키워드를 문맥에 맞게 자연스럽게 반복 포함할 것
+- 검색하는 학부모에게 정보를 전달하는 형태의 문장으로 구성`
+    } else if (channel === 'google') {
+      lengthSpec = '공백 포함 700~750자'
+      channelGuide = `- 채널: 구글 비즈니스 프로필
+- 신뢰감과 전문성을 강조한, 완결된 문단형으로 작성`
+    } else if (channel === 'insta') {
+      lengthSpec = '140~150자'
+      channelGuide = `- 채널: 인스타그램/페이스북 프로필
+- 한두 문장의 임팩트 있는 소개로 압축할 것
+- 이모지는 1~2개까지만 허용`
+    } else if (channel === 'kakao') {
+      lengthSpec = '50~60자'
+      channelGuide = `- 채널: 카카오톡 상태메시지
+- 캐치프레이즈 한 줄로 초압축할 것
+- 완결된 문장이 아니라 구(句) 형태 허용`
+    } else {
+      lengthSpec = `${config.introLength || 500}자 내외`
+      channelGuide = `- 채널: 블로그/홈페이지 상세소개`
+    }
+
     return `당신은 놀작마이아트 원장님의 소개글을 써주는 전문 작가입니다.
 ${NOLJAK_MASTER_GUIDELINE}
 
 [작성 조건]
-- 분량: ${config.introLength || 500}자 내외 (반드시 완성된 글로 마무리)
+- 분량: ${lengthSpec} (반드시 완성된 글로 마무리)
+${channelGuide}
 - 전공(${profile.major}), 학력(${profile.career.education} ${profile.career.degree}), 경력을 자연스럽게 녹여낼 것
 - 센터 키워드(${profile.career.centerKeyword || '미기재'})가 글 전체에 느껴지도록
 - 신뢰감 있고 따뜻한 어조
+- 원장과 센터의 강점이 학부모(구매 결정권자)에게 명확히 전달되도록 설득력 있게 작성할 것
 ${photoContext}
 ${baseProfile}
 ${styleGuide}
 
 소개글만 출력, 설명 없이:`
+  }
+
+  if (config.purpose === 'free' && config.freeMode === 'edit') {
+    return `아래는 기존에 작성된 글입니다.
+
+[원문]
+${config.originalText || ''}
+
+[수정 요청사항]
+${config.editInstructions || ''}
+
+위 요청사항에 해당하는 부분만 수정하고, 나머지 문장과 구조, 표현 방식은 원문을 최대한 그대로 유지할 것. 전면 재작성 금지.
+결과물(수정된 글 전체)만 출력, 설명이나 부연 없이.`
   }
 
   return `당신은 놀작마이아트 원장님의 글쓰기를 돕는 전문 작가입니다.

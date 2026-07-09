@@ -13,7 +13,7 @@ const STEP_LABELS = ['인증', '기본 정보', '글쓰기 설정', '완성']
 const STORAGE_KEY = 'noljak_director_profile'
 
 const defaultProfile: DirectorProfile = {
-  name: '', major: '',
+  name: '', major: '', targetAgeGroup: '',
   career: { education: '', degree: '', career1: '', career1period: '', career2: '', career2period: '', awards: '', centerKeyword: '' },
   personality: { energyDirection: '', emotionExpression: '', thinkingStyle: '', lifeAttitude: '', expressionStyle: '' },
   likeColor: '', likeColorReason: '', avoidColor: '', avoidColorReason: '',

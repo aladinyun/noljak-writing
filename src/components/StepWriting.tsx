@@ -2,7 +2,7 @@
 
 import { useRef, useState } from 'react'
 import type { WritingConfig, EventContext, WritingReference } from '@/lib/types'
-import { PURPOSES, WRITING_GOALS, TARGET_AUDIENCES, SENTENCE_RHYTHMS, EMOTION_STYLES, OPENING_STYLES, WRITING_STYLES, GRADES } from '@/lib/types'
+import { PURPOSES, WRITING_GOALS, TARGET_AUDIENCES, SENTENCE_RHYTHMS, EMOTION_STYLES, OPENING_STYLES, WRITING_STYLES, GRADES, INTRO_CHANNELS } from '@/lib/types'
 
 interface Props {
   config: WritingConfig
@@ -70,10 +70,22 @@ const handlePhotos = async (files: FileList | null) => {
     onChangePhotos(photos.filter((_, i) => i !== index))
   }
 
-  const showReferences = config.purpose === 'blog' || config.purpose === 'free'
+  const freeMode = config.freeMode ?? 'new'
+  const isFreeEdit = config.purpose === 'free' && freeMode === 'edit'
+  const showReferences = config.purpose === 'blog' || (config.purpose === 'free' && !isFreeEdit)
   const references = config.references ?? []
   // 참고자료 필드별 인라인 에러 (키: `${index}-content` / `${index}-angle`)
   const [refErrors, setRefErrors] = useState<Record<string, boolean>>({})
+  // 자유작성 수정 모드 필드별 인라인 에러 (키: 'originalText' / 'editInstructions')
+  const [freeErrors, setFreeErrors] = useState<Record<string, boolean>>({})
+  const setFreeEdit = (key: 'originalText' | 'editInstructions', val: string) => {
+    setC(key, val)
+    setFreeErrors(prev => {
+      const next = { ...prev }
+      delete next[key]
+      return next
+    })
+  }
   const setRef = (i: number, key: keyof WritingReference, val: string) => {
     setC('references', references.map((r, idx) => idx === i ? { ...r, [key]: val } : r))
     setRefErrors(prev => {
@@ -107,7 +119,18 @@ const handlePhotos = async (files: FileList | null) => {
       if (!eventCtx.before) missing.push('놀작 시작 전 고민')
       if (!eventCtx.after) missing.push('놀작 후 변화')
     }
-    if (config.purpose === 'free' && !config.freeTopic) missing.push('글의 주제')
+    if (config.purpose === 'intro' && !config.introChannel) missing.push('소개글 채널')
+    const nextFreeErrors: Record<string, boolean> = {}
+    if (config.purpose === 'free') {
+      if (freeMode === 'edit') {
+        // edit 모드: alert 대신 인라인 에러로 표시
+        if (!config.originalText?.trim()) nextFreeErrors.originalText = true
+        if (!config.editInstructions?.trim()) nextFreeErrors.editInstructions = true
+      } else if (!config.freeTopic) {
+        missing.push('글의 주제')
+      }
+    }
+    setFreeErrors(nextFreeErrors)
     const nextRefErrors: Record<string, boolean> = {}
     if (showReferences) {
       references.forEach((r, i) => {
@@ -126,6 +149,7 @@ const handlePhotos = async (files: FileList | null) => {
       alert(`아래 항목을 입력해주세요:\n\n${missing.map(m => `• ${m}`).join('\n')}`)
       return false
     }
+    if (Object.keys(nextFreeErrors).length > 0) return false
     return true
   }
 
@@ -194,20 +218,41 @@ const handlePhotos = async (files: FileList | null) => {
 
       {config.purpose === 'intro' && (
   <div className="mb-4">
-    <label className="block text-sm mb-1.5" style={{ color: '#7A4F1E' }}>원하는 글자 수</label>
-    <div className="flex items-center gap-3">
-      <input
-        type="number" min={100} max={2000}
-        value={config.introLength ?? ''}
-        onChange={e => {
-          const val = e.target.value
-          setC('introLength', val === '' ? undefined : Number(val))
-        }}
-        placeholder="500"
-        style={{ width: '80px' }}
-      />
-      <span className="text-sm" style={{ color: '#B07D3A' }}>자 (100~2,000자)</span>
+    <p className="text-sm font-medium mb-2" style={{ color: '#7A4F1E' }}>
+      어디에 쓸 글인가요? <span className="text-xs font-normal" style={{ color: '#B07D3A' }}>(1개 선택)</span>
+    </p>
+    <div className="flex flex-wrap gap-2 mb-2">
+      {INTRO_CHANNELS.map(ch => (
+        <button key={ch.id} onClick={() => setC('introChannel', ch.id)}
+          className={`chip ${config.introChannel === ch.id ? 'selected' : ''}`}>
+          {ch.label}
+        </button>
+      ))}
     </div>
+    {config.introChannel && (
+      <p className="text-xs mb-3" style={{ color: '#B07D3A' }}>
+        {INTRO_CHANNELS.find(c => c.id === config.introChannel)?.sub}
+      </p>
+    )}
+
+    {config.introChannel === 'blog' && (
+      <div>
+        <label className="block text-sm mb-1.5" style={{ color: '#7A4F1E' }}>원하는 글자 수</label>
+        <div className="flex items-center gap-3">
+          <input
+            type="number" min={100} max={2000}
+            value={config.introLength ?? ''}
+            onChange={e => {
+              const val = e.target.value
+              setC('introLength', val === '' ? undefined : Number(val))
+            }}
+            placeholder="500"
+            style={{ width: '80px' }}
+          />
+          <span className="text-sm" style={{ color: '#B07D3A' }}>자 (100~2,000자)</span>
+        </div>
+      </div>
+    )}
   </div>
 )}
 
@@ -256,16 +301,50 @@ const handlePhotos = async (files: FileList | null) => {
 
       {config.purpose === 'free' && (
         <div className="mb-4 space-y-3">
-          <div>
-            <label className="block text-sm mb-1.5" style={{ color: '#7A4F1E' }}>글의 주제 <span className="text-red-400">*</span></label>
-            <textarea value={config.freeTopic || ''} onChange={e => setC('freeTopic', e.target.value)}
-              placeholder="어떤 글을 써드릴까요? 자유롭게 알려주세요" />
+          <div className="flex flex-wrap gap-2">
+            {([['new', '새 글 작성'], ['edit', '기존 글 수정']] as const).map(([id, label]) => (
+              <button key={id} onClick={() => setC('freeMode', id)}
+                className={`chip ${freeMode === id ? 'selected' : ''}`}>
+                {label}
+              </button>
+            ))}
           </div>
-          <div>
-            <label className="block text-sm mb-1.5" style={{ color: '#7A4F1E' }}>원하는 분량 <span className="text-xs" style={{ color: '#B07D3A' }}>(선택)</span></label>
-            <input value={config.freeLength || ''} onChange={e => setC('freeLength', e.target.value)}
-              placeholder="예: A4 1매, 500자 내외" />
-          </div>
+
+          {freeMode === 'new' ? (
+            <>
+              <div>
+                <label className="block text-sm mb-1.5" style={{ color: '#7A4F1E' }}>글의 주제 <span className="text-red-400">*</span></label>
+                <textarea value={config.freeTopic || ''} onChange={e => setC('freeTopic', e.target.value)}
+                  placeholder="어떤 글을 써드릴까요? 자유롭게 알려주세요" />
+              </div>
+              <div>
+                <label className="block text-sm mb-1.5" style={{ color: '#7A4F1E' }}>원하는 분량 <span className="text-xs" style={{ color: '#B07D3A' }}>(선택)</span></label>
+                <input value={config.freeLength || ''} onChange={e => setC('freeLength', e.target.value)}
+                  placeholder="예: A4 1매, 500자 내외" />
+              </div>
+            </>
+          ) : (
+            <>
+              <div>
+                <label className="block text-sm mb-1.5" style={{ color: '#7A4F1E' }}>원문 붙여넣기 <span className="text-red-400">*</span></label>
+                <textarea value={config.originalText || ''} onChange={e => setFreeEdit('originalText', e.target.value)}
+                  placeholder="수정할 기존 글을 그대로 붙여넣어 주세요"
+                  style={{ minHeight: '140px', ...(freeErrors.originalText ? { borderColor: '#DC2626' } : {}) }} />
+                {freeErrors.originalText && (
+                  <p className="text-xs mt-1" style={{ color: '#DC2626' }}>수정할 원문을 붙여넣어 주세요.</p>
+                )}
+              </div>
+              <div>
+                <label className="block text-sm mb-1.5" style={{ color: '#7A4F1E' }}>수정 요청사항 <span className="text-red-400">*</span></label>
+                <textarea value={config.editInstructions || ''} onChange={e => setFreeEdit('editInstructions', e.target.value)}
+                  placeholder="예: 최근 여름캠프 내용 추가해줘, 전체적으로 더 짧게 줄여줘"
+                  style={freeErrors.editInstructions ? { borderColor: '#DC2626' } : undefined} />
+                {freeErrors.editInstructions && (
+                  <p className="text-xs mt-1" style={{ color: '#DC2626' }}>수정 요청사항을 입력해주세요.</p>
+                )}
+              </div>
+            </>
+          )}
         </div>
       )}
 

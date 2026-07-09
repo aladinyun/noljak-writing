@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react'
 import type { DirectorProfile } from '@/lib/types'
-import { PERSONALITY_CATEGORIES, COLORS, DEGREES } from '@/lib/types'
+import { PERSONALITY_CATEGORIES, COLORS, DEGREES, TARGET_AGE_GROUPS } from '@/lib/types'
 
 interface Props {
   profile: DirectorProfile
@@ -75,6 +75,23 @@ export default function StepProfile({ profile, onChange, onNext }: Props) {
       <div className="mb-3">
         <label className="block text-sm mb-1.5" style={{ color: '#7A4F1E' }}>전공</label>
         <input value={profile.major} onChange={e => set('major', e.target.value)} placeholder="예: 시각디자인" maxLength={10} />
+      </div>
+
+      <div className="mb-3">
+        <label className="block text-sm mb-2" style={{ color: '#7A4F1E' }}>
+          주 대상 연령층 <span className="text-xs font-normal" style={{ color: '#B07D3A' }}>(1개 선택)</span>
+        </label>
+        <div className="flex flex-wrap gap-2">
+          {TARGET_AGE_GROUPS.map(g => (
+            <button
+              key={g}
+              onClick={() => set('targetAgeGroup', g)}
+              className={`chip ${profile.targetAgeGroup === g ? 'selected' : ''}`}
+            >
+              {g}
+            </button>
+          ))}
+        </div>
       </div>
 
       <p className="section-label mt-4">나의 경력</p>
