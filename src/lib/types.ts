@@ -13,6 +13,7 @@ export interface DirectorProfile {
   name: string
   major: string
   targetAgeGroup: string
+  centerLocation?: string
   career: CareerInfo
   personality: PersonalitySelection
   likeColor: string

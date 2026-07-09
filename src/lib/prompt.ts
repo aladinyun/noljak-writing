@@ -124,7 +124,7 @@ export function buildPrompt(
   const baseProfile = `
 [원장님 정보]
 - 이름: ${profile.name}
-- 전공: ${profile.major}
+- 전공: ${profile.major}${profile.centerLocation?.trim() ? `\n- 센터 지역: ${profile.centerLocation.trim()}` : ''}
 ${profile.targetAgeGroup ? `- 주 대상 연령층: ${profile.targetAgeGroup}` : ''}
 - 최종 학교: ${profile.career.education} (${profile.career.degree})
 - 주요 경력: ${profile.career.career1} ${profile.career.career1period ? `(${profile.career.career1period}년)` : ''}${profile.career.career2 ? `, ${profile.career.career2} ${profile.career.career2period ? `(${profile.career.career2period}년)` : ''}` : ''}
@@ -206,17 +206,23 @@ ${styleGuide}
 
   if (config.purpose === 'intro') {
     const channel = config.introChannel || 'blog'
+    const loc = profile.centerLocation?.trim() || ''
     let lengthSpec = ''
     let channelGuide = ''
     if (channel === 'naver') {
       lengthSpec = '공백 포함 900~1000자'
       channelGuide = `- 채널: 네이버 스마트플레이스 (검색 노출 고려)
-- 지역명 + 업종(미술교육/창의미술) + 핵심 키워드를 문맥에 맞게 자연스럽게 반복 포함할 것
+${loc
+  ? `- 센터 지역(${loc})을 업종(미술교육/창의미술)·핵심 키워드와 함께 자연스럽게 2~3회 반복 포함할 것`
+  : `- 지역명을 임의로 지어내지 말 것. 확인되지 않은 지역명은 언급하지 말고, 업종(미술교육/창의미술)·핵심 키워드 중심으로 반복 포함할 것`}
 - 검색하는 학부모에게 정보를 전달하는 형태의 문장으로 구성`
     } else if (channel === 'google') {
       lengthSpec = '공백 포함 700~750자'
       channelGuide = `- 채널: 구글 비즈니스 프로필
-- 신뢰감과 전문성을 강조한, 완결된 문단형으로 작성`
+- 신뢰감과 전문성을 강조한, 완결된 문단형으로 작성
+${loc
+  ? `- 센터 지역(${loc})을 신뢰감 있게 자연스럽게 포함할 것`
+  : `- 지역명을 임의로 지어내지 말 것. 확인되지 않은 지역명은 언급하지 말 것`}`
     } else if (channel === 'insta') {
       lengthSpec = '140~150자'
       channelGuide = `- 채널: 인스타그램/페이스북 프로필

@@ -78,6 +78,15 @@ export default function StepProfile({ profile, onChange, onNext }: Props) {
       </div>
 
       <div className="mb-3">
+        <label className="block text-sm mb-1.5" style={{ color: '#7A4F1E' }}>
+          센터 지역 <span className="text-xs" style={{ color: '#B07D3A' }}>(선택)</span>
+        </label>
+        <input value={profile.centerLocation || ''} onChange={e => set('centerLocation', e.target.value)}
+          placeholder="예: 경기도 화성시 동탄" maxLength={20} />
+        <p className="text-xs mt-1" style={{ color: '#B07D3A' }}>네이버·구글 채널 소개글 작성 시 활용됩니다 (선택)</p>
+      </div>
+
+      <div className="mb-3">
         <label className="block text-sm mb-2" style={{ color: '#7A4F1E' }}>
           주 대상 연령층 <span className="text-xs font-normal" style={{ color: '#B07D3A' }}>(1개 선택)</span>
         </label>
