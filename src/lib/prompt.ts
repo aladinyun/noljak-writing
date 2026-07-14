@@ -133,7 +133,6 @@ function getPersonalityDescription(personality: DirectorProfile['personality']):
   if (personality.emotionExpression) parts.push(personality.emotionExpression)
   if (personality.thinkingStyle) parts.push(personality.thinkingStyle)
   if (personality.lifeAttitude) parts.push(personality.lifeAttitude)
-  if (personality.expressionStyle) parts.push(personality.expressionStyle)
   return parts.join(', ')
 }
 
@@ -184,6 +183,7 @@ ${profile.career.centerKeyword ? `- 센터 키워드: ${profile.career.centerKey
 - 독자 대상 상세 지침: ${getAudienceGuide(config)}
 - 문장 호흡: ${config.sentenceRhythm}
 - 감정 표현: ${config.emotionStyle}
+- 표현 방식: ${config.expressionStyle}
 - 글 시작 방식: ${config.openingStyle || '자유'}
 - 선호 문체: ${config.writingStyle}
 - 마무리: "${centerName}은 ${profile.career.centerKeyword || ''}한 교육 환경 속에서 아이 한 명 한 명의 성장을 위해 최선을 다하겠습니다."

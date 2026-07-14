@@ -24,6 +24,7 @@ export interface DirectorProfile {
 // - targetAgeGroup이 과거 단일 string으로 저장된 경우 배열로 변환 (빈 문자열은 빈 배열).
 // - centerName이 없으면 빈 문자열로 초기화 (필수 필드 신설, controlled input 경고 방지).
 // - 구버전 색상 필드(likeColor 등)는 이벤트 컨텍스트로 이동했으므로 프로필에서 제거.
+// - 구버전 personality.expressionStyle(표현 방식)은 WritingConfig로 이동했으므로 프로필에서 제거.
 export function migrateProfile(raw: unknown): DirectorProfile {
   const p = { ...(raw as Record<string, unknown>) }
   const t = p.targetAgeGroup
@@ -37,6 +38,9 @@ export function migrateProfile(raw: unknown): DirectorProfile {
   delete p.likeColorReason
   delete p.avoidColor
   delete p.avoidColorReason
+  if (p.personality && typeof p.personality === 'object') {
+    delete (p.personality as Record<string, unknown>).expressionStyle
+  }
   return p as unknown as DirectorProfile
 }
 
@@ -45,7 +49,6 @@ export interface PersonalitySelection {
   emotionExpression: string
   thinkingStyle: string
   lifeAttitude: string
-  expressionStyle: string
 }
 
 export interface WritingReference {
@@ -68,6 +71,7 @@ export interface WritingConfig {
   emotionStyle: string
   openingStyle: string
   writingStyle: string
+  expressionStyle: string  // 표현 방식 (글마다 달라질 수 있어 프로필→글쓰기설정으로 이동)
   blogTopic?: string
   instaTags?: string
   introLength?: number
@@ -146,10 +150,6 @@ export const PERSONALITY_CATEGORIES = {
     label: '생활 태도',
     options: ['도전적이고 추진력 강함', '느긋하고 여유로운', '낙천적이고 긍정적', '걱정이 많고 신경 쓰는 게 많은'],
   },
-  expressionStyle: {
-    label: '표현 방식',
-    options: ['활발하고 에너지 넘침', '조용하고 사려깊음', '유머감각 있고 재치있는', '감수성 풍부하고 섬세한'],
-  },
 } as const
 
 export const WRITING_STYLES = [
@@ -160,6 +160,8 @@ export const WRITING_STYLES = [
 export const SENTENCE_RHYTHMS = ['짧고 강하게', '중간 호흡', '길고 흐르듯이', '짧고 리드미컬하게']
 export const EMOTION_STYLES = ['직접적으로 감정 표현', '절제하고 담담하게', '유머로 풀어내기']
 export const OPENING_STYLES = ['질문으로 시작', '장면 묘사로 시작', '나의 이야기로 시작', '명언/인용으로 시작']
+// 표현 방식: 글마다 달라질 수 있는 성격이라 프로필(성격)에서 글쓰기 설정으로 이동
+export const EXPRESSION_STYLES = ['활발하고 에너지 넘침', '조용하고 사려깊음', '유머감각 있고 재치있는', '감수성 풍부하고 섬세한']
 
 export const COLORS = [
   { name: '노란색', hex: '#FFD600' },

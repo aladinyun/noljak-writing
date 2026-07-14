@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import Image from 'next/image'
 import StepAuth from '@/components/StepAuth'
 import StepProfile from '@/components/StepProfile'
@@ -12,21 +12,38 @@ import { migrateProfile } from '@/lib/types'
 
 const STEP_LABELS = ['인증', '기본 정보', '글쓰기 설정', '완성']
 const STORAGE_KEY = 'noljak_director_profile'
+const DRAFT_KEY = 'noljak_writing_draft'
 
 const defaultProfile: DirectorProfile = {
   centerName: '', name: '', major: '', targetAgeGroup: [],
   career: { education: '', degree: '', career1: '', career1period: '', career2: '', career2period: '', awards: '', centerKeyword: '' },
-  personality: { energyDirection: '', emotionExpression: '', thinkingStyle: '', lifeAttitude: '', expressionStyle: '' },
+  personality: { energyDirection: '', emotionExpression: '', thinkingStyle: '', lifeAttitude: '' },
 }
 
 const defaultConfig: WritingConfig = {
   purpose: 'blog', writingGoal: '', targetAudience: '',
-  sentenceRhythm: '', emotionStyle: '', openingStyle: '', writingStyle: '',
+  sentenceRhythm: '', emotionStyle: '', openingStyle: '', writingStyle: '', expressionStyle: '',
 }
 
 const defaultEvent: EventContext = {
   childName: '', childGrade: '', startAge: '', before: '', after: '', achievement: '', message: '',
   likeColor: '', likeColorReason: '', avoidColor: '', avoidColorReason: '',
+}
+
+// 자동저장 대상 판단: 사용자가 의미 있는 입력/선택을 했는지.
+// (빈 기본값 draft가 저장/복원되어 안내가 잘못 뜨는 것을 방지)
+function draftHasContent(config: WritingConfig, eventCtx: EventContext): boolean {
+  const c = config
+  if (c.writingGoal || c.targetAudience || c.otherAudienceDetail || c.sentenceRhythm ||
+      c.emotionStyle || c.openingStyle || c.writingStyle || c.expressionStyle) return true
+  if (c.blogTopic || c.instaTags || c.introChannel || c.freeTopic || c.freeLength ||
+      c.originalText || c.editInstructions) return true
+  if ((c.references?.length ?? 0) > 0) return true
+  if (c.purpose && c.purpose !== 'blog') return true  // 기본 목적(blog)에서 변경됨
+  const e = eventCtx
+  if (e.childName || e.childGrade || e.startAge || e.before || e.after || e.achievement ||
+      e.message || e.likeColor || e.likeColorReason || e.avoidColor || e.avoidColorReason) return true
+  return false
 }
 
 export default function Home() {
@@ -40,6 +57,8 @@ export default function Home() {
   const [savedName, setSavedName] = useState('')
   const [showRefConfirm, setShowRefConfirm] = useState(false)
   const [refLoading, setRefLoading] = useState(false)
+  const [draftRestored, setDraftRestored] = useState(false)
+  const draftFirstRun = useRef(true)  // 최초 렌더 시 빈 기본값이 draft를 덮어쓰지 않도록 스킵
 
   useEffect(() => {
     try {
@@ -52,6 +71,34 @@ export default function Home() {
       }
     } catch {}
   }, [])
+
+  // 글쓰기 설정 draft 복원 (config + eventCtx, photos는 제외)
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(DRAFT_KEY)
+      if (raw) {
+        const d = JSON.parse(raw)
+        if (d.config) setConfig(d.config)
+        if (d.eventCtx) setEventCtx(d.eventCtx)
+        if (d.config || d.eventCtx) setDraftRestored(true)
+      }
+    } catch {}
+  }, [])
+
+  // 글쓰기 설정 draft 자동저장 (500ms 디바운스, photos 제외)
+  useEffect(() => {
+    if (draftFirstRun.current) { draftFirstRun.current = false; return }
+    const t = setTimeout(() => {
+      try {
+        if (draftHasContent(config, eventCtx)) {
+          localStorage.setItem(DRAFT_KEY, JSON.stringify({ config, eventCtx }))
+        } else {
+          localStorage.removeItem(DRAFT_KEY)  // 내용 비면(리셋 등) draft 제거
+        }
+      } catch {}
+    }, 500)
+    return () => clearTimeout(t)
+  }, [config, eventCtx])
 
   const generate = async (cfgArg?: WritingConfig) => {
     const cfg = cfgArg ?? config
@@ -70,6 +117,11 @@ export default function Home() {
       })
       const data = await res.json()
       setResult({ text: data.text || '', charCount: data.charCount || 0 })
+      // 생성 성공(결과 텍스트 수신) 시 draft 삭제 + 복원 안내 해제
+      if (data.text) {
+        try { localStorage.removeItem(DRAFT_KEY) } catch {}
+        setDraftRestored(false)
+      }
     } catch {
       setResult({ text: '오류가 발생했습니다. 다시 시도해주세요.', charCount: 0 })
     }
@@ -207,6 +259,7 @@ export default function Home() {
           {step === 2 && !showRefConfirm && (
             <StepWriting
               config={config} eventCtx={eventCtx} photos={photos}
+              draftRestored={draftRestored} onDismissDraft={() => setDraftRestored(false)}
               onChangeConfig={setConfig} onChangeEvent={setEventCtx} onChangePhotos={setPhotos}
               onBack={() => setStep(1)} onGenerate={startGenerate}
             />

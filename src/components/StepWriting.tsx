@@ -2,12 +2,14 @@
 
 import { useRef, useState } from 'react'
 import type { WritingConfig, EventContext, WritingReference } from '@/lib/types'
-import { PURPOSES, WRITING_GOALS, TARGET_AUDIENCES, OTHER_AUDIENCE_SUBTYPES, SENTENCE_RHYTHMS, EMOTION_STYLES, OPENING_STYLES, WRITING_STYLES, GRADES, INTRO_CHANNELS, COLORS } from '@/lib/types'
+import { PURPOSES, WRITING_GOALS, TARGET_AUDIENCES, OTHER_AUDIENCE_SUBTYPES, SENTENCE_RHYTHMS, EMOTION_STYLES, OPENING_STYLES, WRITING_STYLES, EXPRESSION_STYLES, GRADES, INTRO_CHANNELS, COLORS } from '@/lib/types'
 
 interface Props {
   config: WritingConfig
   eventCtx: EventContext
   photos: Array<{ base64: string; mediaType: string; name: string }>
+  draftRestored?: boolean
+  onDismissDraft?: () => void
   onChangeConfig: (c: WritingConfig) => void
   onChangeEvent: (e: EventContext) => void
   onChangePhotos: (p: Array<{ base64: string; mediaType: string; name: string }>) => void
@@ -23,7 +25,7 @@ const PHOTO_HINTS: Record<string, string> = {
   free: '글과 관련된 사진을 올려주세요 (최대 3장)',
 }
 
-export default function StepWriting({ config, eventCtx, photos, onChangeConfig, onChangeEvent, onChangePhotos, onBack, onGenerate }: Props) {
+export default function StepWriting({ config, eventCtx, photos, draftRestored, onDismissDraft, onChangeConfig, onChangeEvent, onChangePhotos, onBack, onGenerate }: Props) {
   const fileRef = useRef<HTMLInputElement>(null)
   const setC = (key: keyof WritingConfig, val: unknown) => onChangeConfig({ ...config, [key]: val })
   const setE = (key: keyof EventContext, val: string) => onChangeEvent({ ...eventCtx, [key]: val })
@@ -131,6 +133,7 @@ const handlePhotos = async (files: FileList | null) => {
     if (!config.targetAudience) missing.push('독자 대상')
     if (!config.sentenceRhythm) missing.push('문장 호흡')
     if (!config.emotionStyle) missing.push('감정 표현 방식')
+    if (!config.expressionStyle) missing.push('표현 방식')
     if (config.purpose !== 'insta' && !config.openingStyle) missing.push('글 시작 방식')
     if (!config.writingStyle) missing.push('선호하는 글 스타일')
     if (config.purpose === 'blog' && !config.blogTopic) missing.push('블로그 글의 주제')
@@ -200,6 +203,16 @@ const handlePhotos = async (files: FileList | null) => {
     <div>
       <h2 className="text-lg font-bold mb-1" style={{ color: '#2D1A00' }}>글쓰기 설정</h2>
       <p className="text-sm mb-5" style={{ color: '#7A4F1E' }}>이 글을 어떻게 작성하길 바라나요?</p>
+
+      {draftRestored && (
+        <div className="flex items-start gap-2 mb-4 px-3 py-2 rounded-lg text-xs"
+          style={{ background: '#FFF7E6', border: '1px solid #F0D9A8', color: '#B07D3A' }}>
+          <span className="flex-1">💾 이전에 작성 중이던 내용을 불러왔습니다. <span style={{ color: '#7A4F1E' }}>(사진은 다시 첨부해주세요)</span></span>
+          {onDismissDraft && (
+            <button onClick={onDismissDraft} className="flex-none font-medium" style={{ color: '#E8820C' }}>닫기</button>
+          )}
+        </div>
+      )}
 
       <ChipGroup label="글쓰기 목표" options={WRITING_GOALS} value={config.writingGoal} onChange={v => setC('writingGoal', v)} />
       <ChipGroup label="독자 대상" options={TARGET_AUDIENCES} value={config.targetAudience} onChange={selectAudience} />
@@ -491,6 +504,7 @@ const handlePhotos = async (files: FileList | null) => {
       <p className="section-label">나만의 문장 스타일</p>
       <ChipGroup label="문장 호흡" options={SENTENCE_RHYTHMS} value={config.sentenceRhythm} onChange={v => setC('sentenceRhythm', v)} />
       <ChipGroup label="감정 표현 방식" options={EMOTION_STYLES} value={config.emotionStyle} onChange={v => setC('emotionStyle', v)} />
+      <ChipGroup label="표현 방식" options={EXPRESSION_STYLES} value={config.expressionStyle} onChange={v => setC('expressionStyle', v)} />
       {config.purpose !== 'insta' && (
         <ChipGroup label="글 시작 방식" options={OPENING_STYLES} value={config.openingStyle} onChange={v => setC('openingStyle', v)} />
       )}

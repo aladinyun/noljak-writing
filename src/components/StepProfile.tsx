@@ -17,7 +17,6 @@ const defaultPersonality = {
   emotionExpression: '',
   thinkingStyle: '',
   lifeAttitude: '',
-  expressionStyle: '',
 }
 
 export default function StepProfile({ profile, onChange, onNext }: Props) {
@@ -80,7 +79,6 @@ export default function StepProfile({ profile, onChange, onNext }: Props) {
     if (!p.emotionExpression) missing.push('성격 - 감정 표현')
     if (!p.thinkingStyle) missing.push('성격 - 사고 방식')
     if (!p.lifeAttitude) missing.push('성격 - 생활 태도')
-    if (!p.expressionStyle) missing.push('성격 - 표현 방식')
     // 교육원 명칭 · 센터 지역 필수: alert 대신 인라인 에러로 표시
     const centerNameMissing = !profile.centerName?.trim()
     setCenterNameError(centerNameMissing)
