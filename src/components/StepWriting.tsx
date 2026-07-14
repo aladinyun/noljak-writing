@@ -2,7 +2,7 @@
 
 import { useRef, useState } from 'react'
 import type { WritingConfig, EventContext, WritingReference } from '@/lib/types'
-import { PURPOSES, WRITING_GOALS, TARGET_AUDIENCES, SENTENCE_RHYTHMS, EMOTION_STYLES, OPENING_STYLES, WRITING_STYLES, GRADES, INTRO_CHANNELS } from '@/lib/types'
+import { PURPOSES, WRITING_GOALS, TARGET_AUDIENCES, OTHER_AUDIENCE_SUBTYPES, SENTENCE_RHYTHMS, EMOTION_STYLES, OPENING_STYLES, WRITING_STYLES, GRADES, INTRO_CHANNELS, COLORS } from '@/lib/types'
 
 interface Props {
   config: WritingConfig
@@ -78,6 +78,27 @@ const handlePhotos = async (files: FileList | null) => {
   const [refErrors, setRefErrors] = useState<Record<string, boolean>>({})
   // 자유작성 수정 모드 필드별 인라인 에러 (키: 'originalText' / 'editInstructions')
   const [freeErrors, setFreeErrors] = useState<Record<string, boolean>>({})
+
+  // 독자 대상 '기타' 2단 선택 인라인 에러
+  const [audienceError, setAudienceError] = useState(false)
+  const CREATOR_SUBTYPES = OTHER_AUDIENCE_SUBTYPES.slice(0, 3)
+  // 하위 칩 선택 상태(로컬). 마운트 시 config.otherAudienceDetail로부터 역산 복원.
+  const [otherSubtype, setOtherSubtype] = useState<string>(() => {
+    const d = config.otherAudienceDetail
+    if (!d) return ''
+    return CREATOR_SUBTYPES.includes(d) ? d : '기타(직접입력)'
+  })
+  const selectAudience = (v: string) => {
+    onChangeConfig({ ...config, targetAudience: v, otherAudienceDetail: v === '기타' ? config.otherAudienceDetail : undefined })
+    if (v !== '기타') setOtherSubtype('')
+    setAudienceError(false)
+  }
+  const selectSubtype = (s: string) => {
+    setOtherSubtype(s)
+    // 창업유형이면 그 값이 곧 resolved 값, 직접입력이면 텍스트 입력을 위해 비움
+    setC('otherAudienceDetail', s === '기타(직접입력)' ? '' : s)
+    setAudienceError(false)
+  }
   const setFreeEdit = (key: 'originalText' | 'editInstructions', val: string) => {
     setC(key, val)
     setFreeErrors(prev => {
@@ -145,11 +166,18 @@ const handlePhotos = async (files: FileList | null) => {
       })
     }
     setRefErrors(nextRefErrors)
+    // 독자 대상 '기타' 2단 선택 미완료: alert 대신 인라인 에러로 차단
+    let audienceIncomplete = false
+    if (config.targetAudience === '기타') {
+      if (!otherSubtype) audienceIncomplete = true
+      else if (otherSubtype === '기타(직접입력)' && !config.otherAudienceDetail?.trim()) audienceIncomplete = true
+    }
+    setAudienceError(audienceIncomplete)
     if (missing.length > 0) {
       alert(`아래 항목을 입력해주세요:\n\n${missing.map(m => `• ${m}`).join('\n')}`)
       return false
     }
-    if (Object.keys(nextFreeErrors).length > 0) return false
+    if (Object.keys(nextFreeErrors).length > 0 || audienceIncomplete) return false
     return true
   }
 
@@ -174,7 +202,33 @@ const handlePhotos = async (files: FileList | null) => {
       <p className="text-sm mb-5" style={{ color: '#7A4F1E' }}>이 글을 어떻게 작성하길 바라나요?</p>
 
       <ChipGroup label="글쓰기 목표" options={WRITING_GOALS} value={config.writingGoal} onChange={v => setC('writingGoal', v)} />
-      <ChipGroup label="독자 대상" options={TARGET_AUDIENCES} value={config.targetAudience} onChange={v => setC('targetAudience', v)} />
+      <ChipGroup label="독자 대상" options={TARGET_AUDIENCES} value={config.targetAudience} onChange={selectAudience} />
+
+      {config.targetAudience === '기타' && (
+        <div className="mb-4 -mt-1 pl-1">
+          <p className="text-xs font-medium mb-2" style={{ color: '#B07D3A' }}>
+            세부 대상 <span className="font-normal">(1개 선택)</span>
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {OTHER_AUDIENCE_SUBTYPES.map(s => (
+              <button key={s} onClick={() => selectSubtype(s)}
+                className={`chip ${otherSubtype === s ? 'selected' : ''}`}>{s}</button>
+            ))}
+          </div>
+          {otherSubtype === '기타(직접입력)' && (
+            <input className="mt-2"
+              value={config.otherAudienceDetail || ''}
+              onChange={e => { setC('otherAudienceDetail', e.target.value); setAudienceError(false) }}
+              placeholder="예: 지역 아동센터 교사, 예비 학부모 등" maxLength={30}
+              style={audienceError ? { borderColor: '#DC2626' } : undefined} />
+          )}
+          {audienceError && (
+            <p className="text-xs mt-1" style={{ color: '#DC2626' }}>
+              {otherSubtype === '기타(직접입력)' ? '직접입력 내용을 입력해주세요.' : '세부 대상을 선택해주세요.'}
+            </p>
+          )}
+        </div>
+      )}
 
       <div className="section-divider" />
 
@@ -295,6 +349,30 @@ const handlePhotos = async (files: FileList | null) => {
             <label className="block text-sm mb-1.5" style={{ color: '#7A4F1E' }}>놀작에 전하는 말</label>
             <textarea value={eventCtx.message} onChange={e => setE('message', e.target.value)}
               placeholder="예: 놀작 덕분에 내 아이도, 나도 당당하게 성장했습니다!" />
+          </div>
+
+          {/* 색상 이야기 (이벤트 수기 작성 시에만 입력) */}
+          <div className="mt-4 pt-3 border-t" style={{ borderColor: '#F0D9A8' }}>
+            <p className="text-xs font-semibold mb-2" style={{ color: '#E8820C' }}>
+              🎨 색상 이야기 <span className="font-normal" style={{ color: '#B07D3A' }}>(선택 · 수기에만 활용)</span>
+            </p>
+            {([
+              { key: 'likeColor', rKey: 'likeColorReason', label: '가장 좋아하는 색상', ph: '이 색을 좋아하는 이유' },
+              { key: 'avoidColor', rKey: 'avoidColorReason', label: '다루기 조심스러운 색상', ph: '이 색이 조심스러운 이유' },
+            ] as const).map(({ key, rKey, label, ph }) => (
+              <div key={key} className="mb-3">
+                <label className="block text-sm mb-2" style={{ color: '#7A4F1E' }}>{label}</label>
+                <div className="flex flex-wrap gap-2 mb-2">
+                  {COLORS.map(c => (
+                    <button key={c.name} title={c.name} onClick={() => setE(key, c.name)}
+                      className={`color-chip ${eventCtx[key] === c.name ? 'selected' : ''}`}
+                      style={{ background: c.hex, border: (c as { border?: boolean }).border ? '1px solid #ddd' : undefined }} />
+                  ))}
+                </div>
+                {eventCtx[key] && <p className="text-xs mb-1" style={{ color: '#E8820C' }}>{eventCtx[key]} 선택됨</p>}
+                <input value={eventCtx[rKey]} onChange={e => setE(rKey, e.target.value)} placeholder={ph} />
+              </div>
+            ))}
           </div>
         </div>
       )}

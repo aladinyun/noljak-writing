@@ -105,6 +105,28 @@ function getAgeToneGuide(ageGroups: string[]): string {
 ${detail}`
 }
 
+function getAudienceGuide(config: WritingConfig): string {
+  const a = config.targetAudience
+  if (a === '학부모') {
+    return '유아·초등 저학년 자녀를 둔 부모(주로 엄마)를 대상으로, 정서적 공감과 안심, 아이 성장에 대한 실질적 정보를 중심으로 작성'
+  }
+  if (a === '일반인') {
+    return '놀작·미술교육에 대한 사전 지식이 없이 SNS나 검색을 통해 우연히 접하는 대중을 대상으로, 쉽고 흥미로운 도입부와 전문용어 최소화로 작성'
+  }
+  if (a === '기타') {
+    const d = config.otherAudienceDetail?.trim() || ''
+    const CREATOR = ['미술학원·미술교습소 창업예비자', '미술홈스쿨 창업예비자', '해외 미술학원 창업예비자']
+    if (CREATOR.includes(d)) {
+      return `${d}를 대상으로, 사업성·수익모델·운영 노하우에 관심 있는 예비 창업자 관점에서 교육철학보다 비즈니스 관점의 정보를 강조하여 작성`
+    }
+    if (d) {
+      return `원장이 지정한 대상(${d})에 맞춰 적절한 어조로 작성`
+    }
+    return '지정된 독자 대상에 맞춰 적절한 어조로 작성'
+  }
+  return a || ''
+}
+
 function getPersonalityDescription(personality: DirectorProfile['personality']): string {
   const parts = []
   if (personality.energyDirection) parts.push(personality.energyDirection)
@@ -129,12 +151,17 @@ export function buildPrompt(
 
   const personalityDesc = getPersonalityDescription(profile.personality)
 
-  const centerName = profile.career.centerKeyword
-    ? `놀작마이아트 ${profile.name} 원장의 교육원`
+  const centerName = profile.centerName?.trim()
+    ? `저희 ${profile.centerName.trim()}`
     : '저희 교육원'
+
+  const audienceLabel = config.targetAudience === '기타'
+    ? (config.otherAudienceDetail?.trim() || '기타')
+    : config.targetAudience
 
   const baseProfile = `
 [원장님 정보]
+- 교육원 명칭: ${profile.centerName || '미기재'}
 - 이름: ${profile.name}
 - 전공: ${profile.major}${profile.centerLocation?.trim() ? `\n- 센터 지역: ${profile.centerLocation.trim()}` : ''}
 ${profile.targetAgeGroup?.length ? `- 주 대상 연령층: ${profile.targetAgeGroup.join(', ')}` : ''}
@@ -146,22 +173,30 @@ ${profile.career.centerKeyword ? `- 센터 키워드: ${profile.career.centerKey
 
   const ageToneGuide = getAgeToneGuide(profile.targetAgeGroup)
 
+  const goalGuide = config.writingGoal === '행동 유도'
+    ? '\n- 행동 유도 지침: 글의 마지막 부분에 상담 신청, 체험 수업 참여 등 구체적인 다음 행동을 자연스럽게 유도하는 문장을 포함할 것. 단, 지나치게 노골적인 광고 문구는 피하고 자연스러운 권유 형태로.'
+    : ''
+
   const styleGuide = `
 [이 글의 스타일 가이드]
-- 글쓰기 목표: ${config.writingGoal}
-- 독자 대상: ${config.targetAudience}
+- 글쓰기 목표: ${config.writingGoal}${goalGuide}
+- 독자 대상: ${audienceLabel}
+- 독자 대상 상세 지침: ${getAudienceGuide(config)}
 - 문장 호흡: ${config.sentenceRhythm}
 - 감정 표현: ${config.emotionStyle}
 - 글 시작 방식: ${config.openingStyle || '자유'}
 - 선호 문체: ${config.writingStyle}
-- 마무리: "${centerName}은 ${profile.career.centerKeyword || ''}한 교육 환경 속에서 아이 한 명 한 명의 성장을 위해 최선을 다하겠습니다."${ageToneGuide}`
+- 마무리: "${centerName}은 ${profile.career.centerKeyword || ''}한 교육 환경 속에서 아이 한 명 한 명의 성장을 위해 최선을 다하겠습니다."
+- 센터 키워드가 여러 개(쉼표로 구분) 입력된 경우, 그 중 문맥에 가장 잘 어울리는 대표 키워드 1개만 마무리 문장에 자연스럽게 사용할 것 (여러 개를 나열하듯 붙이지 말 것)${ageToneGuide}`
 
   if (config.purpose === 'event' && eventCtx) {
+    const colorLines = [
+      eventCtx.likeColor ? `- 좋아하는 색상: ${eventCtx.likeColor}${eventCtx.likeColorReason ? ` (${eventCtx.likeColorReason})` : ''}` : '',
+      eventCtx.avoidColor ? `- 조심스러운 색상: ${eventCtx.avoidColor}${eventCtx.avoidColorReason ? ` (${eventCtx.avoidColorReason})` : ''}` : '',
+    ].filter(Boolean).join('\n')
     return `${EVENT_PROMPT}
 ${NOLJAK_MASTER_GUIDELINE}
-${baseProfile}
-- 좋아하는 색상: ${profile.likeColor}${profile.likeColorReason ? ` (${profile.likeColorReason})` : ''}
-- 조심스러운 색상: ${profile.avoidColor}${profile.avoidColorReason ? ` (${profile.avoidColorReason})` : ''}
+${baseProfile}${colorLines ? `\n${colorLines}` : ''}
 ${styleGuide}
 
 [아이 성장 이야기]
@@ -219,6 +254,7 @@ ${styleGuide}
   if (config.purpose === 'intro') {
     const channel = config.introChannel || 'blog'
     const loc = profile.centerLocation?.trim() || ''
+    const school = profile.nearbySchool?.trim() || ''
     let lengthSpec = ''
     let channelGuide = ''
     if (channel === 'naver') {
@@ -227,6 +263,9 @@ ${styleGuide}
 ${loc
   ? `- 센터 지역(${loc})을 업종(미술교육/창의미술)·핵심 키워드와 함께 자연스럽게 2~3회 반복 포함할 것`
   : `- 지역명을 임의로 지어내지 말 것. 확인되지 않은 지역명은 언급하지 말고, 업종(미술교육/창의미술)·핵심 키워드 중심으로 반복 포함할 것`}
+${school
+  ? `- 인근 초등학교(${school})를 지역 키워드와 함께 자연스럽게 언급할 것`
+  : `- 인근 학교명을 임의로 지어내지 말 것`}
 - 검색하는 학부모에게 정보를 전달하는 형태의 문장으로 구성`
     } else if (channel === 'google') {
       lengthSpec = '공백 포함 700~750자'
@@ -234,7 +273,19 @@ ${loc
 - 신뢰감과 전문성을 강조한, 완결된 문단형으로 작성
 ${loc
   ? `- 센터 지역(${loc})을 신뢰감 있게 자연스럽게 포함할 것`
-  : `- 지역명을 임의로 지어내지 말 것. 확인되지 않은 지역명은 언급하지 말 것`}`
+  : `- 지역명을 임의로 지어내지 말 것. 확인되지 않은 지역명은 언급하지 말 것`}
+${school
+  ? `- 인근 초등학교(${school})를 자연스럽게 언급해 지역 신뢰감을 줄 것`
+  : `- 인근 학교명을 임의로 지어내지 말 것`}`
+    } else if (channel === 'cafe') {
+      lengthSpec = '공백 포함 1000~2000자'
+      channelGuide = `- 채널: 맘카페 등 커뮤니티 후기
+- 광고처럼 보이지 않는 자연스러운 후기·경험담 형식으로 작성
+- 직접 아이를 보내본 학부모가 쓴 것처럼 진솔한 어조로 작성
+- "최고", "1등" 등 노골적인 홍보 문구는 사용하지 말 것
+- 실제 경험 사례 중심으로 서술할 것
+- SEO 키워드 반복은 지양하고 자연스러운 흐름을 우선할 것
+${loc ? `- 지역(${loc})은 경험담 맥락에서만 자연스럽게 언급할 것` : `- 지역명을 임의로 지어내지 말 것`}`
     } else if (channel === 'insta') {
       lengthSpec = '140~150자'
       channelGuide = `- 채널: 인스타그램/페이스북 프로필

@@ -14,10 +14,9 @@ const STEP_LABELS = ['인증', '기본 정보', '글쓰기 설정', '완성']
 const STORAGE_KEY = 'noljak_director_profile'
 
 const defaultProfile: DirectorProfile = {
-  name: '', major: '', targetAgeGroup: [],
+  centerName: '', name: '', major: '', targetAgeGroup: [],
   career: { education: '', degree: '', career1: '', career1period: '', career2: '', career2period: '', awards: '', centerKeyword: '' },
   personality: { energyDirection: '', emotionExpression: '', thinkingStyle: '', lifeAttitude: '', expressionStyle: '' },
-  likeColor: '', likeColorReason: '', avoidColor: '', avoidColorReason: '',
 }
 
 const defaultConfig: WritingConfig = {
@@ -27,6 +26,7 @@ const defaultConfig: WritingConfig = {
 
 const defaultEvent: EventContext = {
   childName: '', childGrade: '', startAge: '', before: '', after: '', achievement: '', message: '',
+  likeColor: '', likeColorReason: '', avoidColor: '', avoidColorReason: '',
 }
 
 export default function Home() {

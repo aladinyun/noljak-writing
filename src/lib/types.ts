@@ -10,20 +10,20 @@ export interface CareerInfo {
 }
 
 export interface DirectorProfile {
+  centerName: string         // 교육원 명칭 (필수)
   name: string
   major: string
   targetAgeGroup: string[]   // 주 대상 연령층 (최대 2개, '전체'는 단독)
   centerLocation?: string
+  nearbySchool?: string      // 가까운 초등학교 (선택, 네이버·구글 소개글용)
   career: CareerInfo
   personality: PersonalitySelection
-  likeColor: string
-  likeColorReason: string
-  avoidColor: string
-  avoidColorReason: string
 }
 
 // 저장된 프로필 로드 시 구버전 데이터 마이그레이션.
 // - targetAgeGroup이 과거 단일 string으로 저장된 경우 배열로 변환 (빈 문자열은 빈 배열).
+// - centerName이 없으면 빈 문자열로 초기화 (필수 필드 신설, controlled input 경고 방지).
+// - 구버전 색상 필드(likeColor 등)는 이벤트 컨텍스트로 이동했으므로 프로필에서 제거.
 export function migrateProfile(raw: unknown): DirectorProfile {
   const p = { ...(raw as Record<string, unknown>) }
   const t = p.targetAgeGroup
@@ -32,6 +32,11 @@ export function migrateProfile(raw: unknown): DirectorProfile {
   } else if (!Array.isArray(t)) {
     p.targetAgeGroup = []
   }
+  if (typeof p.centerName !== 'string') p.centerName = ''
+  delete p.likeColor
+  delete p.likeColorReason
+  delete p.avoidColor
+  delete p.avoidColorReason
   return p as unknown as DirectorProfile
 }
 
@@ -52,12 +57,13 @@ export interface WritingReference {
   confirmed: boolean      // 확인 단계에서 "이대로 반영" 여부
 }
 
-export type IntroChannel = 'naver' | 'google' | 'blog' | 'insta' | 'kakao'
+export type IntroChannel = 'naver' | 'google' | 'blog' | 'insta' | 'kakao' | 'cafe'
 
 export interface WritingConfig {
   purpose: 'blog' | 'insta' | 'intro' | 'event' | 'free'
   writingGoal: string
   targetAudience: string
+  otherAudienceDetail?: string  // 독자 대상 '기타' 하위 선택값 또는 자유입력 텍스트
   sentenceRhythm: string
   emotionStyle: string
   openingStyle: string
@@ -82,6 +88,10 @@ export interface EventContext {
   after: string
   achievement: string
   message: string
+  likeColor: string        // 색상 이야기 (이벤트 수기 작성 시에만 입력)
+  likeColorReason: string
+  avoidColor: string
+  avoidColorReason: string
 }
 
 export type Step = -1 | 0 | 1 | 2 | 3
@@ -98,15 +108,24 @@ export const INTRO_CHANNELS = [
   { id: 'naver', label: '네이버 스마트플레이스', sub: 'SEO 키워드형 · 900~1000자' },
   { id: 'google', label: '구글 비즈니스 프로필', sub: '신뢰감 있는 설명형 · 700~750자' },
   { id: 'blog', label: '블로그/홈페이지 상세소개', sub: '글자 수 직접 입력' },
+  { id: 'cafe', label: '카페 (맘카페 등 커뮤니티)', sub: '자연스러운 후기·경험담 · 1000~2000자' },
   { id: 'insta', label: '인스타그램/페이스북 프로필', sub: '임팩트 한두 문장 · 140~150자' },
   { id: 'kakao', label: '카카오톡 상태메시지', sub: '초압축 캐치프레이즈 · 50~60자' },
 ] as const
 
 export const WRITING_GOALS = [
-  '공감 얻기', '정보 전달', '신뢰 구축', '감동 주기',
+  '공감 얻기', '정보 전달', '신뢰 구축', '감동 주기', '행동 유도',
 ]
 
 export const TARGET_AUDIENCES = ['학부모', '일반인' , '기타']
+
+// 독자 대상 '기타' 선택 시 노출되는 2단 세부 유형 (마지막은 직접입력)
+export const OTHER_AUDIENCE_SUBTYPES = [
+  '미술학원·미술교습소 창업예비자',
+  '미술홈스쿨 창업예비자',
+  '해외 미술학원 창업예비자',
+  '기타(직접입력)',
+]
 
 export const TARGET_AGE_GROUPS = ['미취학 (3~5세)', '초등 저학년 (초1~3)', '초등 고학년 (초4~6)', '전체']
 
@@ -138,7 +157,7 @@ export const WRITING_STYLES = [
   '시처럼 서정적', 'SNS처럼 친근하고 짧은',
 ]
 
-export const SENTENCE_RHYTHMS = ['짧고 강하게', '중간 호흡', '길고 흐르듯이']
+export const SENTENCE_RHYTHMS = ['짧고 강하게', '중간 호흡', '길고 흐르듯이', '짧고 리드미컬하게']
 export const EMOTION_STYLES = ['직접적으로 감정 표현', '절제하고 담담하게', '유머로 풀어내기']
 export const OPENING_STYLES = ['질문으로 시작', '장면 묘사로 시작', '나의 이야기로 시작', '명언/인용으로 시작']
 

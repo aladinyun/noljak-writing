@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import type { DirectorProfile } from '@/lib/types'
-import { PERSONALITY_CATEGORIES, COLORS, DEGREES, TARGET_AGE_GROUPS, migrateProfile } from '@/lib/types'
+import { PERSONALITY_CATEGORIES, DEGREES, TARGET_AGE_GROUPS, migrateProfile } from '@/lib/types'
 
 interface Props {
   profile: DirectorProfile
@@ -28,6 +28,11 @@ export default function StepProfile({ profile, onChange, onNext }: Props) {
     onChange({ ...profile, personality: { ...profile.personality, [key]: val } })
 
   const [locError, setLocError] = useState(false)
+  const [centerNameError, setCenterNameError] = useState(false)
+
+  // 센터 키워드: 쉼표 기준 개수 (4개 이상이면 경고만, 저장은 막지 않음)
+  const keywordCount = (profile.career.centerKeyword || '').split(',').map(s => s.trim()).filter(Boolean).length
+  const keywordOver = keywordCount > 3
 
   // 주 대상 연령층 다중선택 (최대 2개, '전체'는 단독 상호배타)
   const ALL_AGE = '전체'
@@ -76,14 +81,16 @@ export default function StepProfile({ profile, onChange, onNext }: Props) {
     if (!p.thinkingStyle) missing.push('성격 - 사고 방식')
     if (!p.lifeAttitude) missing.push('성격 - 생활 태도')
     if (!p.expressionStyle) missing.push('성격 - 표현 방식')
-    // 센터 지역 필수: alert 대신 인라인 에러로 표시
+    // 교육원 명칭 · 센터 지역 필수: alert 대신 인라인 에러로 표시
+    const centerNameMissing = !profile.centerName?.trim()
+    setCenterNameError(centerNameMissing)
     const locMissing = !profile.centerLocation?.trim()
     setLocError(locMissing)
     if (missing.length > 0) {
       alert(`아래 항목을 입력해주세요:\n\n${missing.map(m => `• ${m}`).join('\n')}`)
       return false
     }
-    if (locMissing) return false
+    if (centerNameMissing || locMissing) return false
     return true
   }
 
@@ -94,6 +101,18 @@ export default function StepProfile({ profile, onChange, onNext }: Props) {
 
       {/* 기본 정보 */}
     <p className="section-label">기본 정보</p>
+      <div className="mb-3">
+        <label className="block text-sm mb-1.5" style={{ color: '#7A4F1E' }}>
+          교육원 명칭 <span className="text-red-400">*</span>
+        </label>
+        <input value={profile.centerName || ''}
+          onChange={e => { set('centerName', e.target.value); setCenterNameError(false) }}
+          placeholder="예: 놀작마이아트 동탄점" maxLength={30}
+          style={centerNameError ? { borderColor: '#DC2626' } : undefined} />
+        {centerNameError && (
+          <p className="text-xs mt-1" style={{ color: '#DC2626' }}>교육원 명칭을 입력해주세요 (예: 놀작마이아트 동탄점)</p>
+        )}
+      </div>
       <div className="mb-3">
         <label className="block text-sm mb-1.5" style={{ color: '#7A4F1E' }}>이름</label>
         <input value={profile.name} onChange={e => set('name', e.target.value)} placeholder="김놀작" maxLength={10} />
@@ -116,6 +135,16 @@ export default function StepProfile({ profile, onChange, onNext }: Props) {
         ) : (
           <p className="text-xs mt-1" style={{ color: '#B07D3A' }}>네이버·구글 채널 소개글 작성 시 활용됩니다</p>
         )}
+      </div>
+
+      <div className="mb-3">
+        <label className="block text-sm mb-1.5" style={{ color: '#7A4F1E' }}>
+          가까운 초등학교 <span className="text-xs" style={{ color: '#B07D3A' }}>(선택, 1곳)</span>
+        </label>
+        <input value={profile.nearbySchool || ''}
+          onChange={e => set('nearbySchool', e.target.value)}
+          placeholder="예: 동탄초등학교" maxLength={20} />
+        <p className="text-xs mt-1" style={{ color: '#B07D3A' }}>네이버·구글 채널 소개글에 활용됩니다</p>
       </div>
 
       <div className="mb-3">
@@ -197,9 +226,19 @@ export default function StepProfile({ profile, onChange, onNext }: Props) {
         <input
           value={profile.career.centerKeyword}
           onChange={e => setCareer('centerKeyword', e.target.value)}
-          placeholder="예: 따뜻한, 창의적인, 전문적인, 즐거운, 안전한"
-          maxLength={20}
+          placeholder="예: 따뜻한, 창의적인, 전문적인"
+          maxLength={40}
+          style={keywordOver ? { borderColor: '#DC2626' } : undefined}
         />
+        {keywordOver ? (
+          <p className="text-xs mt-1" style={{ color: '#DC2626' }}>
+            최대 3개까지 권장합니다. 현재 {keywordCount}개 입력됨 — 대표 키워드 위주로 줄여주세요.
+          </p>
+        ) : (
+          <p className="text-xs mt-1" style={{ color: '#B07D3A' }}>
+            쉼표(,)로 구분해 최대 3개까지 입력해주세요 (예: 따뜻한, 창의적인, 전문적인)
+          </p>
+        )}
       </div>
 
       {/* 저장 버튼 */}
@@ -236,28 +275,6 @@ export default function StepProfile({ profile, onChange, onNext }: Props) {
           </div>
         )
       })}
-
-      <div className="section-divider" />
-
-      {/* 색상 */}
-      <p className="section-label">색상 이야기 <span className="font-normal normal-case text-xs" style={{ color: '#B07D3A' }}>(이벤트 수기 작성 시에만 활용됩니다)</span></p>
-      {[
-        { key: 'likeColor' as const, rKey: 'likeColorReason' as const, label: '가장 좋아하는 색상', ph: '이 색을 좋아하는 이유' },
-        { key: 'avoidColor' as const, rKey: 'avoidColorReason' as const, label: '다루기 조심스러운 색상', ph: '이 색이 조심스러운 이유' },
-      ].map(({ key, rKey, label, ph }) => (
-        <div key={key} className="mb-4">
-          <label className="block text-sm mb-2" style={{ color: '#7A4F1E' }}>{label}</label>
-          <div className="flex flex-wrap gap-2 mb-2">
-            {COLORS.map(c => (
-              <button key={c.name} title={c.name} onClick={() => set(key, c.name)}
-                className={`color-chip ${profile[key] === c.name ? 'selected' : ''}`}
-                style={{ background: c.hex, border: (c as { border?: boolean }).border ? '1px solid #ddd' : undefined }} />
-            ))}
-          </div>
-          {profile[key] && <p className="text-xs mb-1" style={{ color: '#E8820C' }}>{profile[key]} 선택됨</p>}
-          <input value={profile[rKey]} onChange={e => set(rKey, e.target.value)} placeholder={ph} />
-        </div>
-      ))}
 
       <button onClick={() => { if (validate()) onNext() }} className="btn-primary mt-2">다음 단계 →</button>
     </div>
