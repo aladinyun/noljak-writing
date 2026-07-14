@@ -4,7 +4,7 @@ import Anthropic from '@anthropic-ai/sdk'
 import { buildPrompt } from '@/lib/prompt'
 import type { DirectorProfile, WritingConfig, EventContext } from '@/lib/types'
 
-export const maxDuration = 60
+export const maxDuration = 90
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 
