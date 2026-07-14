@@ -181,11 +181,22 @@ export default function Home() {
     setShowRefConfirm(false)
   }
 
+  // 헤더 로고 클릭: 글쓰기 진행 상태만 초기화(인증은 유지, resetAll 재사용).
+  // 인증 화면(step 0)에서는 인증을 건너뛰지 않도록 무시.
+  const goHome = () => {
+    if (step === 0) return
+    resetAll()
+  }
+
   return (
     <div className="min-h-screen" style={{ background: '#FFF8EE' }}>
       {/* 헤더 */}
       <div className="flex items-center px-4 py-3 border-b" style={{ borderColor: '#F0D9A8', background: 'white' }}>
-        <Image src="/noljak-logo.png" alt="놀작" width={80} height={28} style={{ objectFit: 'contain' }} />
+        <button type="button" onClick={goHome} aria-label="처음으로 이동"
+          className="transition-opacity hover:opacity-70"
+          style={{ cursor: 'pointer', lineHeight: 0 }}>
+          <Image src="/noljak-logo.png" alt="놀작" width={80} height={28} style={{ objectFit: 'contain' }} />
+        </button>
       </div>
 
       <div className="max-w-lg mx-auto px-4 py-6">
